@@ -1,5 +1,4 @@
 export const prerender = false;
-
 export async function GET({ url }) {
   const code = url.searchParams.get('code');
   const clientID = process.env.GITHUB_CLIENT_ID;
@@ -15,43 +14,29 @@ export async function GET({ url }) {
     const data = await res.json();
     const token = data.access_token;
 
-    // もしトークンが取れなかった場合のエラー表示
-    if (!token) {
-      return new Response("GitHubからのトークン取得に失敗しました。設定を確認してください。", { status: 500 });
-    }
-
-    // デカップCMSが受け取れる「最も標準的で強力な」メッセージ送信コード
     const responseHtml = `
       <!DOCTYPE html>
       <html>
-      <head><title>認証成功</title></head>
       <body>
-        <p>認証に成功しました。まもなく管理画面へ戻ります...</p>
         <script>
-          (function() {
-            const token = "${token}";
-            const content = JSON.stringify({ token: token, provider: "github" });
-            const message = "authorization:github:success:" + content;
-            
-            // 親ウィンドウにメッセージを送信（ターゲットを明示的に指定せず広く送る）
-            window.opener.postMessage(message, "*");
-            
-            console.log("Token sent to opener.");
-            
-            // 1秒待ってから閉じる
-            setTimeout(function() {
-              window.close();
-            }, 1000);
-          })();
+          const token = "${token}";
+          const message = "authorization:github:success:" + JSON.stringify({token: token, provider: "github"});
+          
+          // 親ウィンドウにトークンを送信
+          if (window.opener) {
+            window.opener.postMessage(message, window.location.origin);
+            setTimeout(() => window.close(), 500);
+          } else {
+            document.body.innerHTML = "ログイン成功。画面を閉じて管理画面を更新してください。";
+          }
         </script>
+        認証に成功しました。
       </body>
       </html>
     `;
 
-    return new Response(responseHtml, {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
+    return new Response(responseHtml, { headers: { 'Content-Type': 'text/html' } });
   } catch (e) {
-    return new Response("接続エラー: " + e.message, { status: 500 });
+    return new Response(e.message, { status: 500 });
   }
 }
