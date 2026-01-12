@@ -5,11 +5,9 @@ backend:
   base_url: https://penan-japanese-news.vercel.app
   auth_endpoint: api/auth
 
-# 保存設定
 media_folder: "public/images"
 public_folder: "/images"
 
-# 記事の保存場所
 collections:
   - name: "posts"
     label: "記事一覧"
