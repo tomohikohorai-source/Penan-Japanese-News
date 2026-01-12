@@ -6,9 +6,11 @@
   <title>PJN 管理画面</title>
 </head>
 <body>
-  <!-- 設定ファイルを読み込むための目印 -->
-  <link href="config.yml" type="text/yaml" rel="cms-config-url" />
-  <!-- 最新の安定版 Decap CMS を読み込み -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <!-- Netlify（Decap公式）の安定した配信元から読み込みます -->
+  <script src="https://unpkg.com/netlify-cms@^2.10.192/dist/netlify-cms.js"></script>
+  <script>
+    // 手動で設定ファイルの場所を教える（念押し）
+    window.cms_config_url = "/admin/config.yml";
+  </script>
 </body>
 </html>
