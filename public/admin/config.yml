@@ -1,16 +1,13 @@
 backend:
   name: github
-  # 1. あなたのGitHubユーザー名とリポジトリ名に書き換えてください
   repo: tomohikohorai-source/pjn-site 
   branch: main
-  # 2. あなたのVercelサイトのURL（末尾のスラッシュは不要）を書いてください
-  base_url: https://penan-japanese-news.vercel.app/
-  # 3. ログイン用の入り口（ステップ3で作ったAPI）の場所を指定します
+  # ↓ ここから末尾の / を消しました（重要！）
+  base_url: https://penan-japanese-news.vercel.app
   auth_endpoint: api/auth 
 
-publish_mode: editorial_workflow # 下書き保存・承認機能を使えるようにします
+publish_mode: editorial_workflow
 
-# 記事の保存場所と入力項目の設定
 collections:
   - name: "posts"
     label: "記事一覧"
