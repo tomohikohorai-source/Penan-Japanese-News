@@ -2,11 +2,15 @@ backend:
   name: github
   repo: tomohikohorai-source/pjn-site 
   branch: main
-  # ↓ ここから末尾の / を消しました（重要！）
   base_url: https://penan-japanese-news.vercel.app
   auth_endpoint: api/auth 
 
 publish_mode: editorial_workflow
+
+# --- 【修正箇所】ここが足りなかったためエラーが出ていました ---
+media_folder: "public/images" # 画像を保存する場所
+public_folder: "/images"       # サイト上での画像のパス
+# -----------------------------------------------------------
 
 collections:
   - name: "posts"
