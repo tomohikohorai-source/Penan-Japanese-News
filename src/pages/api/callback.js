@@ -15,38 +15,28 @@ export async function GET({ url }) {
     const data = await res.json();
     const token = data.access_token;
 
-    if (!token) {
-      return new Response("トークンの取得に失敗しました。VercelのEnvironment Variablesを確認してください。", { status: 500 });
-    }
+    if (!token) return new Response("Token error", { status: 500 });
 
-    // 文字化けを防ぎ、確実に親画面へメッセージを送り、確実に閉じるHTML
     const html = `
       <!DOCTYPE html>
-      <html lang="ja">
-      <head>
-        <meta charset="utf-8">
-        <title>認証完了</title>
-      </head>
+      <html>
+      <head><meta charset="utf-8"></head>
       <body>
-        <div id="status">認証に成功しました。まもなく管理画面に戻ります...</div>
+        <p>認証完了。画面を切り替えています...</p>
         <script>
           (function() {
             const token = "${token}";
-            const message = "authorization:github:success:" + JSON.stringify({
-              token: token,
-              provider: "github"
-            });
+            const userStr = JSON.stringify({ token: token, provider: "github" });
             
-            // 全ての可能性を考慮してメッセージを送信
+            // 1. 親ウィンドウに合図を送る（標準的な方法）
             if (window.opener) {
-              // ターゲットを "*" にすることで、オリジンの不一致によるブロックを回避
-              window.opener.postMessage(message, "*");
-              console.log("Success: Token sent to opener.");
-            } else {
-              document.getElementById("status").innerText = "エラー：親ウィンドウが見つかりません。";
+              window.opener.postMessage("authorization:github:success:" + userStr, "*");
             }
             
-            // 確実に送信を完了させるために1秒待ってから閉じる
+            // 2. 万が一のためにブラウザの共通領域にも鍵を保存する
+            localStorage.setItem('decap-cms-user', userStr);
+            
+            // 3. 1秒後にウィンドウを閉じる
             setTimeout(() => {
               window.close();
             }, 1000);
@@ -56,10 +46,8 @@ export async function GET({ url }) {
       </html>
     `;
 
-    return new Response(html, {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
+    return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   } catch (e) {
-    return new Response("接続エラー: " + e.message, { status: 500 });
+    return new Response(e.message, { status: 500 });
   }
 }
