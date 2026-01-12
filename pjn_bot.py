@@ -42,7 +42,7 @@ date: "{datetime.date.today()}"
 category: "{genre}"
 ---
 <div class="genre-label">ジャンル：{genre}</div>
-<h3>【内容（全文翻訳）】</h3>
+<h3>【内容】</h3>
 
 {body}
 
