@@ -15,29 +15,35 @@ export async function GET({ url }) {
     const data = await res.json();
     const token = data.access_token;
 
-    // トークンを親ウィンドウに渡し、確実にウィンドウを閉じる命令
+    // もしトークンが取れなかった場合のエラー表示
+    if (!token) {
+      return new Response("GitHubからのトークン取得に失敗しました。設定を確認してください。", { status: 500 });
+    }
+
+    // デカップCMSが受け取れる「最も標準的で強力な」メッセージ送信コード
     const responseHtml = `
       <!DOCTYPE html>
       <html>
+      <head><title>認証成功</title></head>
       <body>
+        <p>認証に成功しました。まもなく管理画面へ戻ります...</p>
         <script>
           (function() {
             const token = "${token}";
-            const message = "authorization:github:success:" + JSON.stringify({
-              token: token,
-              provider: "github"
-            });
+            const content = JSON.stringify({ token: token, provider: "github" });
+            const message = "authorization:github:success:" + content;
             
-            // 親ウィンドウ（管理画面）にトークンを送信
-            window.opener.postMessage(message, window.location.origin);
+            // 親ウィンドウにメッセージを送信（ターゲットを明示的に指定せず広く送る）
+            window.opener.postMessage(message, "*");
             
-            // 少し待ってから閉じる（確実に送信するため）
-            setTimeout(() => {
+            console.log("Token sent to opener.");
+            
+            // 1秒待ってから閉じる
+            setTimeout(function() {
               window.close();
-            }, 500);
+            }, 1000);
           })();
         </script>
-        認証に成功しました。この画面は自動的に閉じます。
       </body>
       </html>
     `;
@@ -46,6 +52,6 @@ export async function GET({ url }) {
       headers: { 'Content-Type': 'text/html; charset=utf-8' }
     });
   } catch (e) {
-    return new Response("エラーが発生しました: " + e.message, { status: 500 });
+    return new Response("接続エラー: " + e.message, { status: 500 });
   }
 }
