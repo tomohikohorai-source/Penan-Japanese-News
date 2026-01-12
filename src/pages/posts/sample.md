@@ -13,4 +13,4 @@ category: "教育"
 
 参加には事前登録が必要ですので、公式サイトのフォームより1月末までにお申し込みください。
 
-<a href="https://www.pjs.edu.my/" class="source-link">🔗 参照元記事を確認する</a>
+<a href="http://www.pjs.edu.my/" target="_blank" rel="noopener noreferrer" class="source-link">🔗 ペナン日本人学校 公式サイト（外部サイト）</a>
