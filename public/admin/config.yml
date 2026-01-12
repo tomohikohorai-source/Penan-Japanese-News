@@ -1,16 +1,16 @@
 backend:
   name: github
-  repo: tomohikohorai-source/pjn-site 
+  repo: tomohikohorai-source/pjn-site # ← ハイフンまで正確に！
   branch: main
   base_url: https://penan-japanese-news.vercel.app
-  auth_endpoint: api/auth 
+  auth_endpoint: api/auth
 
+# 画像を使わなくてもこれは必須です
+media_folder: "public/images"
+public_folder: "/images"
+
+# 下書き保存機能
 publish_mode: editorial_workflow
-
-# --- 【修正箇所】ここが足りなかったためエラーが出ていました ---
-media_folder: "public/images" # 画像を保存する場所
-public_folder: "/images"       # サイト上での画像のパス
-# -----------------------------------------------------------
 
 collections:
   - name: "posts"
