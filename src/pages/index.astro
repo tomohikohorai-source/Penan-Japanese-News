@@ -6,17 +6,26 @@ try {
     console.error("記事の読み込み失敗", e);
 }
 
+// ソートロジックの強化
 const sortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
+        // 1. 日付で比較（新しい順）
         const dateA = new Date(a.frontmatter.date || 0).getTime();
         const dateB = new Date(b.frontmatter.date || 0).getTime();
-        return dateB - dateA;
+        
+        if (dateB !== dateA) {
+            return dateB - dateA;
+        }
+        
+        // 2. 日付が同じ場合、ファイル名で比較（新しい順 = アルファベット逆順）
+        // 投稿順にファイル名をつけていれば、これで最新のビルド順が保たれます
+        return b.file.localeCompare(a.file);
     });
 
 const tabList = [
     { id: "all", label: "トピック" },
-    { id: "search", label: "🔍 検索" }, // 検索タブを追加
+    { id: "search", label: "🔍 検索" },
     { id: "重要・安全", label: "重要・安全" },
     { id: "教育・学校", label: "教育・学校" },
     { id: "ビザ・生活行政", label: "ビザ・行政" },
@@ -31,11 +40,11 @@ const tabList = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>Penang Japanese News</title>
-    <!-- Pagefind UIのスタイル読み込み -->
+    <!-- Pagefind UIの読み込み -->
     <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
     <style>
         :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; --pagefind-ui-primary: #ce1126; }
-        body { font-family: sans-serif; margin: 0; background: var(--bg-color); color: #333; }
+        body { font-family: -apple-system, "Helvetica Neue", sans-serif; margin: 0; background: var(--bg-color); color: #333; }
         header { background: var(--pjn-red); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
@@ -58,7 +67,6 @@ const tabList = [
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
 
-        /* 検索セクションのスタイル */
         #search-section { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 300px; }
 
         details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
@@ -94,12 +102,8 @@ const tabList = [
         </ul>
     </nav>
     <main>
-        <!-- 検索画面（初期は非表示） -->
-        <section id="search-section">
-            <div id="search-ui"></div>
-        </section>
+        <section id="search-section"><div id="search-ui"></div></section>
 
-        <!-- 記事一覧 -->
         <div class="news-grid" id="news-grid">
             {sortedPosts.map(post => (
                 <details class="article-card" data-category={post.frontmatter.category} data-date={post.frontmatter.date}>
@@ -119,7 +123,6 @@ const tabList = [
         </div>
     </main>
 
-    <!-- Pagefind UIのスクリプト読み込み -->
     <script src="/pagefind/pagefind-ui.js" is:inline></script>
     <script is:inline>
         function initTabs() {
@@ -180,9 +183,10 @@ const tabList = [
                 });
         }
 
-        // 検索UIの初期化
-        window.addEventListener('DOMContentLoaded', (event) => {
-            new PagefindUI({ element: "#search-ui", showSubResults: true, translations: { placeholder: "キーワードを入力（例：病院、断水、ビザ）" } });
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof PagefindUI !== 'undefined') {
+                new PagefindUI({ element: "#search-ui", showSubResults: true, translations: { placeholder: "キーワードを入力（例：病院、断水、ビザ）" } });
+            }
         });
 
         initTabs();
