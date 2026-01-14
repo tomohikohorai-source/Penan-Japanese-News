@@ -32,19 +32,36 @@ const tabList = [
     <title>Penang Japanese News</title>
     <style>
         :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; }
-        body { font-family: "Helvetica Neue", Arial, "Hiragino Sans", sans-serif; margin: 0; background: var(--bg-color); color: #333; }
+        body { font-family: "Helvetica Neue", Arial, sans-serif; margin: 0; background: var(--bg-color); color: #333; }
         
-        header { background: var(--pjn-red); color: white; padding: 1.2rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
+        header { background: var(--pjn-red); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 5px; opacity: 0.95; }
 
-        .nav-container { background: #fff; position: sticky; top: 72px; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-        @media (min-width: 768px) { .nav-container { top: 98px; } }
+        /* 【新設】ヘイズ・ステータスバー */
+        .info-bar {
+            background: #333; color: white;
+            padding: 6px 10px; font-size: 0.75rem;
+            display: flex; justify-content: center; gap: 15px;
+            position: sticky; top: 68px; z-index: 999;
+        }
+        .aqi-value { font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        .aqi-good { background: #009966; } /* 良好 */
+        .aqi-moderate { background: #ffde33; color: #000; } /* 普通 */
+        .aqi-unhealthy { background: #ff9933; } /* 注意 */
+
+        .nav-container { background: #fff; position: sticky; top: 104px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        @media (min-width: 768px) { 
+            .nav-container { top: 130px; } 
+            .info-bar { top: 94px; }
+            header h1 { font-size: 1.6rem; }
+        }
+
         .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; }
         .tab-item.active { color: var(--pjn-red); }
-        .tab-item.active::after { content: ""; position: absolute; bottom: 0; left: 10%; right: 10%; height: 4px; background: var(--pjn-red); }
+        .tab-item.active::after { content: ""; position: absolute; bottom: 0; left: 10%; right: 10%; height: 3px; background: var(--pjn-red); }
         
         main { padding: 15px; max-width: 1400px; margin: auto; }
         .news-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
@@ -55,21 +72,8 @@ const tabList = [
         .card-meta { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .date { font-size: 0.8rem; color: #888; font-weight: bold; }
         .badge { font-size: 0.75rem; background: #f0f0f0; color: #555; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .new-badge { display: none; font-size: 0.7rem; background: #ff4757; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 900; margin-left: 5px; }
         
-        /* NEWバッジのスタイル */
-        .new-badge {
-            display: none; /* デフォルトは非表示 */
-            font-size: 0.7rem;
-            background: #ff4757;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 900;
-            margin-left: 5px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-
         .title { font-size: 1.15rem; font-weight: bold; line-height: 1.5; color: #111; display: block; }
         .content { padding: 0 25px 25px; border-top: 1px solid #f5f5f5; font-size: 1.05rem; line-height: 1.9; color: #444; max-width: 800px; margin: 0 auto; }
         .hidden { display: none !important; }
@@ -83,6 +87,12 @@ const tabList = [
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
     </header>
+
+    <!-- 【新設】ヘイズ指数バー -->
+    <div class="info-bar">
+        <span id="pjn-aqi">空気質指数(AQI): 取得中...</span>
+    </div>
+
     <nav class="nav-container">
         <ul class="nav-tabs">
             {tabList.map((tab, index) => (
@@ -109,40 +119,10 @@ const tabList = [
             ))}
         </div>
     </main>
+
     <script>
-        // 1. NEWバッジの制御 (24時間判定)
-        const checkNew = () => {
-            const now = new Date();
-            document.querySelectorAll('.article-card').forEach(card => {
-                const publishDate = new Date(card.dataset.date);
-                const diffMs = now - publishDate;
-                const diffHours = diffMs / (1000 * 60 * 60);
-                
-                if (diffHours >= 0 && diffHours < 24) {
-                    card.querySelector('.new-badge').style.display = 'inline-block';
-                }
-            });
-        };
-
-        // 2. タブ切り替え制御
-        const tabs = document.querySelectorAll('.tab-item');
-        const articles = document.querySelectorAll('.article-card');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                const target = tab.getAttribute('data-target');
-                tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                articles.forEach(a => {
-                    const cat = a.getAttribute('data-category');
-                    if (target === 'all' || cat === target) a.classList.remove('hidden');
-                    else a.classList.add('hidden');
-                });
-            });
-        });
-
-        // 実行
-        checkNew();
-    </script>
-</body>
-</html>
+        // 1. ヘイズ指数(AQI)取得機能
+        async function updateAQI() {
+            const el = document.getElementById('pjn-aqi');
+            try {
+                /
