@@ -6,7 +6,8 @@ try {
     console.error("記事の読み込み失敗", e);
 }
 
-const sortedPosts = posts
+// 記事のソート（日付＋ビルド順）
+const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
         const dateA = new Date(a.frontmatter.date || 0).getTime();
@@ -15,15 +16,20 @@ const sortedPosts = posts
         return b.file.localeCompare(a.file);
     });
 
+// 小説だけのリストを作成（ページめくり用）
+const novelPosts = allSortedPosts
+    .filter(p => p.frontmatter.category === "PJN編集長 連載小説")
+    .reverse(); // 第1回から順に並べる
+
 const tabList = [
-    { id: "all", label: "トピック" },
-    { id: "重要・安全", label: "重要・安全" },
-    { id: "教育・学校", label: "教育・学校" },
-    { id: "ビザ・生活行政", label: "ビザ・行政" },
-    { id: "医療・健康", label: "医療・健康" },
-    { id: "グルメ・店", label: "グルメ・店" },
-    { id: "お得・経済", label: "お得・経済" },
-    { id: "PJN編集長 連載小説", label: "連載小説" }
+    { id: "all", label: "トピック", color: "#ce1126" },
+    { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
+    { id: "教育・学校", label: "教育・学校", color: "#005596" },
+    { id: "ビザ・生活行政", label: "ビザ・行政", color: "#2e7d32" },
+    { id: "医療・健康", label: "医療・健康", color: "#00838f" },
+    { id: "グルメ・店", label: "グルメ・店", color: "#ef6c00" },
+    { id: "お得・経済", label: "お得・経済", color: "#d4af37" },
+    { id: "PJN編集長 連載小説", label: "連載小説", color: "#6a1b9a" }
 ];
 ---
 <html lang="ja">
@@ -31,23 +37,18 @@ const tabList = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>Penang Japanese News</title>
-    <style>
-        :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; }
+    <style define:vars={{ initialColor: tabList[0].color }}>
+        :root { --pjn-red: var(--initialColor); --bg-color: #f4f6f8; --theme-color: var(--initialColor); }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; transition: background 0.3s; }
         
-        /* 【新設】読書進捗バーの土台（ヘッダーより上に表示） */
-        #reading-progress-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 4px;
-            background: transparent; z-index: 2000;
-        }
-        #reading-progress-bar {
-            height: 100%; width: 0%; background: #ffde33; /* 目立つ黄色 */
-            transition: width 0.1s ease;
-        }
-
-        header { background: var(--pjn-red); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
+        /* ヘッダー・テーマカラー連動 */
+        header { background: var(--theme-color); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
+
+        /* 進捗バー */
+        #reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 2000; }
+        #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
 
         .info-bar { background: #333; color: white; padding: 6px 10px; font-size: 0.75rem; display: flex; justify-content: center; position: sticky; top: 68px; z-index: 999; height: 20px; align-items: center;}
         .aqi-value { font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-left: 5px; }
@@ -58,150 +59,53 @@ const tabList = [
 
         .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
-        .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; }
-        .tab-item.active { color: var(--pjn-red); border-bottom: 3px solid var(--pjn-red); }
+        .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; transition: color 0.3s; }
+        .tab-item.active { color: var(--theme-color); border-bottom: 3px solid var(--theme-color); }
         
         main { padding: 10px; max-width: 1400px; margin: auto; }
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
 
-        details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
+        /* PC版ワイドレイアウト */
+        @media (min-width: 1200px) { details[open] { grid-column: span 2; } }
+
+        details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; transition: 0.2s; }
         summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
+        summary::-webkit-details-marker { display: none; }
         .card-meta { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .date { font-size: 0.7rem; color: #999; font-weight: bold; }
         .badge { font-size: 0.65rem; background: #f0f0f0; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .new-badge { display: none; font-size: 0.7rem; background: #ff4757; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+        
         .title { font-size: 1rem; font-weight: bold; line-height: 1.5; color: #111; display: block; }
         .content { padding: 0 18px 18px; border-top: 1px solid #f5f5f5; font-size: 0.95rem; line-height: 1.8; color: #444; }
         .hidden { display: none !important; }
         
-        :global(h3) { font-size: 1.05rem; color: var(--pjn-red); margin: 18px 0 10px; border-left: 4px solid var(--pjn-red); padding-left: 10px; }
+        /* シェアボタンのスタイル */
+        .share-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; display: flex; gap: 10px; flex-wrap: wrap; }
+        .share-btn { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-decoration: none; color: white; cursor: pointer; border: none; }
+        .btn-wa { background: #25D366; }
+        .btn-line { background: #06C755; }
+        .btn-copy { background: #666; }
+
+        /* 小説ナビゲーション */
+        .novel-nav { margin-top: 20px; padding: 15px; background: #f9f0ff; border-radius: 8px; display: flex; justify-content: space-between; font-size: 0.85rem; border: 1px solid #e1bee7; }
+        .novel-nav a { color: #6a1b9a; text-decoration: none; font-weight: bold; }
+
+        :global(h3) { font-size: 1.05rem; color: var(--theme-color); margin: 18px 0 10px; border-left: 4px solid var(--theme-color); padding-left: 10px; transition: color 0.5s, border-color 0.5s; }
         :global(.source-link) { display: inline-block; margin-top: 15px; font-size: 0.85rem; color: #005596; text-decoration: none; background: #f8f9fa; padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd; }
 
-        /* 【新設】トップへ戻るボタン */
-        #back-to-top {
-            position: fixed; bottom: 20px; right: 20px;
-            width: 45px; height: 45px; background: var(--pjn-red);
-            color: white; border-radius: 50%; border: none;
-            display: none; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 1500; font-size: 24px; font-weight: bold;
-        }
-        #back-to-top:active { transform: scale(0.9); }
+        #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1500; font-size: 24px; transition: background 0.5s; }
     </style>
 </head>
 <body>
-    <!-- 読書進捗バー -->
-    <div id="reading-progress-container">
-        <div id="reading-progress-bar"></div>
-    </div>
-
-    <header>
+    <div id="reading-progress-container"><div id="reading-progress-bar"></div></div>
+    <header id="main-header">
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
     </header>
-
     <div class="info-bar"><span id="pjn-aqi">ペナン空気指数(AQI): 取得中...</span></div>
-
     <nav class="nav-container">
         <ul class="nav-tabs">
             {tabList.map((tab) => (
-                <li class={`tab-item ${tab.id === 'all' ? 'active' : ''}`} data-target={tab.id}>{tab.label}</li>
-            ))}
-        </ul>
-    </nav>
-    <main>
-        <div class="news-grid" id="news-grid">
-            {sortedPosts.map(post => (
-                <details class="article-card" data-category={post.frontmatter.category} data-date={post.frontmatter.date}>
-                    <summary>
-                        <div class="card-meta">
-                            <span class="date">{(post.frontmatter.date || "").toString().split('-').join('/')}</span>
-                            <span class="badge">{post.frontmatter.category}</span>
-                            <span class="new-badge">NEW</span>
-                        </div>
-                        <span class="title">{post.frontmatter.title}</span>
-                    </summary>
-                    <div class="content"><post.Content /></div>
-                </details>
-            ))}
-        </div>
-    </main>
-
-    <!-- トップへ戻るボタン -->
-    <button id="back-to-top" title="トップへ戻る" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
-
-    <script is:inline>
-        // 1. タブ切り替え
-        function initTabs() {
-            var tabs = document.querySelectorAll('.tab-item');
-            var articles = document.querySelectorAll('.article-card');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].onclick = function() {
-                    for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
-                    this.classList.add('active');
-                    var target = this.getAttribute('data-target');
-                    this.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                    for (var k = 0; k < articles.length; k++) {
-                        var cat = articles[k].getAttribute('data-category');
-                        if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
-                        else articles[k].classList.add('hidden');
-                    }
-                };
-            }
-        }
-
-        // 2. NEWバッジ
-        function initNewBadges() {
-            var now = new Date();
-            var articles = document.querySelectorAll('.article-card');
-            for (var i = 0; i < articles.length; i++) {
-                var pubDateStr = articles[i].getAttribute('data-date');
-                if (!pubDateStr) continue;
-                var pubDate = new Date(pubDateStr);
-                var diff = (now - pubDate) / 1000 / 60 / 60;
-                if (diff >= 0 && diff < 24) articles[i].querySelector('.new-badge').style.display = 'inline-block';
-            }
-        }
-
-        // 3. AQI取得
-        function initAQI() {
-            var el = document.getElementById('pjn-aqi');
-            fetch('https://api.waqi.info/feed/penang/?token=demo')
-                .then(function(res) { return res.json(); })
-                .then(function(json) {
-                    if (json.status === 'ok') {
-                        var aqi = json.data.aqi;
-                        var cls = 'aqi-good'; var txt = '良好';
-                        if (aqi > 50) { cls = 'aqi-moderate'; txt = '普通'; }
-                        if (aqi > 100) { cls = 'aqi-unhealthy'; txt = '注意'; }
-                        el.innerHTML = 'ペナン大気指数(AQI): <span class="aqi-value ' + cls + '">' + aqi + ' (' + txt + ')</span>';
-                    }
-                });
-        }
-
-        // 4. 【新設】スクロール連動（進捗バー & 戻るボタン）
-        function initScrollEffects() {
-            var progressBar = document.getElementById('reading-progress-bar');
-            var backToTop = document.getElementById('back-to-top');
-
-            window.onscroll = function() {
-                // 進捗バーの計算
-                var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-                var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                var scrolled = (winScroll / height) * 100;
-                progressBar.style.width = scrolled + "%";
-
-                // トップへ戻るボタンの表示・非表示 (300pxスクロールしたら表示)
-                if (winScroll > 300) {
-                    backToTop.style.display = "flex";
-                } else {
-                    backToTop.style.display = "none";
-                }
-            };
-        }
-
-        initTabs(); initNewBadges(); initAQI(); initScrollEffects();
-    </script>
-</body>
-</html>
+                <li class={`tab-item
