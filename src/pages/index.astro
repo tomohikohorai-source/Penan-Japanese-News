@@ -16,6 +16,7 @@ const sortedPosts = posts
 
 const tabList = [
     { id: "all", label: "トピック" },
+    { id: "search", label: "🔍 検索" }, // 検索タブを追加
     { id: "重要・安全", label: "重要・安全" },
     { id: "教育・学校", label: "教育・学校" },
     { id: "ビザ・生活行政", label: "ビザ・行政" },
@@ -30,11 +31,13 @@ const tabList = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>Penang Japanese News</title>
+    <!-- Pagefind UIのスタイル読み込み -->
+    <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
     <style>
-        :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; }
+        :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; --pagefind-ui-primary: #ce1126; }
         body { font-family: sans-serif; margin: 0; background: var(--bg-color); color: #333; }
         header { background: var(--pjn-red); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
-        header h1 { margin: 0; font-size: 1.2rem; font-weight: bold; }
+        header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
 
         .info-bar { background: #333; color: white; padding: 6px 10px; font-size: 0.75rem; display: flex; justify-content: center; position: sticky; top: 68px; z-index: 999; height: 20px; align-items: center;}
@@ -49,12 +52,14 @@ const tabList = [
         .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; }
-        .tab-item.active { color: var(--pjn-red); }
-        .tab-item.active::after { content: ""; position: absolute; bottom: 0; left: 10%; right: 10%; height: 3px; background: var(--pjn-red); }
+        .tab-item.active { color: var(--pjn-red); border-bottom: 3px solid var(--pjn-red); }
         
         main { padding: 10px; max-width: 1400px; margin: auto; }
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
+
+        /* 検索セクションのスタイル */
+        #search-section { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 300px; }
 
         details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
         summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
@@ -89,6 +94,12 @@ const tabList = [
         </ul>
     </nav>
     <main>
+        <!-- 検索画面（初期は非表示） -->
+        <section id="search-section">
+            <div id="search-ui"></div>
+        </section>
+
+        <!-- 記事一覧 -->
         <div class="news-grid" id="news-grid">
             {sortedPosts.map(post => (
                 <details class="article-card" data-category={post.frontmatter.category} data-date={post.frontmatter.date}>
@@ -100,7 +111,7 @@ const tabList = [
                         </div>
                         <span class="title">{post.frontmatter.title}</span>
                     </summary>
-                    <div class="content">
+                    <div class="content" data-pagefind-body>
                         <post.Content />
                     </div>
                 </details>
@@ -108,27 +119,38 @@ const tabList = [
         </div>
     </main>
 
+    <!-- Pagefind UIのスクリプト読み込み -->
+    <script src="/pagefind/pagefind-ui.js" is:inline></script>
     <script is:inline>
-        // 1. タブ切り替えロジック（最優先で実行）
         function initTabs() {
             var tabs = document.querySelectorAll('.tab-item');
             var articles = document.querySelectorAll('.article-card');
+            var newsGrid = document.getElementById('news-grid');
+            var searchSection = document.getElementById('search-section');
+
             for (var i = 0; i < tabs.length; i++) {
                 tabs[i].onclick = function() {
                     for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
                     this.classList.add('active');
                     var target = this.getAttribute('data-target');
                     this.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                    for (var k = 0; k < articles.length; k++) {
-                        var cat = articles[k].getAttribute('data-category');
-                        if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
-                        else articles[k].classList.add('hidden');
+
+                    if (target === 'search') {
+                        newsGrid.style.display = 'none';
+                        searchSection.style.display = 'block';
+                    } else {
+                        searchSection.style.display = 'none';
+                        newsGrid.style.display = 'grid';
+                        for (var k = 0; k < articles.length; k++) {
+                            var cat = articles[k].getAttribute('data-category');
+                            if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
+                            else articles[k].classList.add('hidden');
+                        }
                     }
                 };
             }
         }
 
-        // 2. NEWバッジの制御（24時間以内判定）
         function initNewBadges() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
@@ -136,14 +158,13 @@ const tabList = [
                 var pubDateStr = articles[i].getAttribute('data-date');
                 if (!pubDateStr) continue;
                 var pubDate = new Date(pubDateStr);
-                var diff = (now - pubDate) / 1000 / 60 / 60; // hours
+                var diff = (now - pubDate) / 1000 / 60 / 60;
                 if (diff >= 0 && diff < 24) {
                     articles[i].querySelector('.new-badge').style.display = 'inline-block';
                 }
             }
         }
 
-        // 3. AQIの取得（非同期で、失敗しても他を止めない）
         function initAQI() {
             var el = document.getElementById('pjn-aqi');
             fetch('https://api.waqi.info/feed/penang/?token=demo')
@@ -151,21 +172,19 @@ const tabList = [
                 .then(function(json) {
                     if (json.status === 'ok') {
                         var aqi = json.data.aqi;
-                        var cls = 'aqi-good';
-                        var txt = '良好';
+                        var cls = 'aqi-good'; var txt = '良好';
                         if (aqi > 50) { cls = 'aqi-moderate'; txt = '普通'; }
                         if (aqi > 100) { cls = 'aqi-unhealthy'; txt = '注意'; }
                         el.innerHTML = 'ペナン大気指数(AQI): <span class="aqi-value ' + cls + '">' + aqi + ' (' + txt + ')</span>';
-                    } else {
-                        el.innerText = '大気指数: 取得制限中';
                     }
-                })
-                .catch(function() {
-                    el.innerText = '大気指数: オフライン';
                 });
         }
 
-        // 実行開始
+        // 検索UIの初期化
+        window.addEventListener('DOMContentLoaded', (event) => {
+            new PagefindUI({ element: "#search-ui", showSubResults: true, translations: { placeholder: "キーワードを入力（例：病院、断水、ビザ）" } });
+        });
+
         initTabs();
         initNewBadges();
         initAQI();
