@@ -1,7 +1,6 @@
 ---
 let posts = [];
 try {
-    // 取得先を元の src/pages/posts/*.md に戻しました
     posts = await Astro.glob('./posts/*.md');
 } catch (e) {
     console.error("記事の読み込み失敗", e);
@@ -35,21 +34,37 @@ const tabList = [
     <style>
         :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; }
+        
+        /* 【新設】読書進捗バーの土台（ヘッダーより上に表示） */
+        #reading-progress-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 4px;
+            background: transparent; z-index: 2000;
+        }
+        #reading-progress-bar {
+            height: 100%; width: 0%; background: #ffde33; /* 目立つ黄色 */
+            transition: width 0.1s ease;
+        }
+
         header { background: var(--pjn-red); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
+
         .info-bar { background: #333; color: white; padding: 6px 10px; font-size: 0.75rem; display: flex; justify-content: center; position: sticky; top: 68px; z-index: 999; height: 20px; align-items: center;}
         .aqi-value { font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-left: 5px; }
         .aqi-good { background: #009966; } .aqi-moderate { background: #ffde33; color: #000; } .aqi-unhealthy { background: #ff9933; }
+
         .nav-container { background: #fff; position: sticky; top: 104px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
         @media (min-width: 768px) { .nav-container { top: 130px; } .info-bar { top: 94px; } header h1 { font-size: 1.6rem; } }
+
         .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; }
         .tab-item.active { color: var(--pjn-red); border-bottom: 3px solid var(--pjn-red); }
+        
         main { padding: 10px; max-width: 1400px; margin: auto; }
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
+
         details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
         summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
         .card-meta { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -59,16 +74,35 @@ const tabList = [
         .title { font-size: 1rem; font-weight: bold; line-height: 1.5; color: #111; display: block; }
         .content { padding: 0 18px 18px; border-top: 1px solid #f5f5f5; font-size: 0.95rem; line-height: 1.8; color: #444; }
         .hidden { display: none !important; }
+        
         :global(h3) { font-size: 1.05rem; color: var(--pjn-red); margin: 18px 0 10px; border-left: 4px solid var(--pjn-red); padding-left: 10px; }
         :global(.source-link) { display: inline-block; margin-top: 15px; font-size: 0.85rem; color: #005596; text-decoration: none; background: #f8f9fa; padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd; }
+
+        /* 【新設】トップへ戻るボタン */
+        #back-to-top {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 45px; height: 45px; background: var(--pjn-red);
+            color: white; border-radius: 50%; border: none;
+            display: none; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1500; font-size: 24px; font-weight: bold;
+        }
+        #back-to-top:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
+    <!-- 読書進捗バー -->
+    <div id="reading-progress-container">
+        <div id="reading-progress-bar"></div>
+    </div>
+
     <header>
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
     </header>
+
     <div class="info-bar"><span id="pjn-aqi">ペナン空気指数(AQI): 取得中...</span></div>
+
     <nav class="nav-container">
         <ul class="nav-tabs">
             {tabList.map((tab) => (
@@ -93,7 +127,12 @@ const tabList = [
             ))}
         </div>
     </main>
+
+    <!-- トップへ戻るボタン -->
+    <button id="back-to-top" title="トップへ戻る" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
+
     <script is:inline>
+        // 1. タブ切り替え
         function initTabs() {
             var tabs = document.querySelectorAll('.tab-item');
             var articles = document.querySelectorAll('.article-card');
@@ -111,6 +150,8 @@ const tabList = [
                 };
             }
         }
+
+        // 2. NEWバッジ
         function initNewBadges() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
@@ -122,6 +163,8 @@ const tabList = [
                 if (diff >= 0 && diff < 24) articles[i].querySelector('.new-badge').style.display = 'inline-block';
             }
         }
+
+        // 3. AQI取得
         function initAQI() {
             var el = document.getElementById('pjn-aqi');
             fetch('https://api.waqi.info/feed/penang/?token=demo')
@@ -136,7 +179,29 @@ const tabList = [
                     }
                 });
         }
-        initTabs(); initNewBadges(); initAQI();
+
+        // 4. 【新設】スクロール連動（進捗バー & 戻るボタン）
+        function initScrollEffects() {
+            var progressBar = document.getElementById('reading-progress-bar');
+            var backToTop = document.getElementById('back-to-top');
+
+            window.onscroll = function() {
+                // 進捗バーの計算
+                var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                var scrolled = (winScroll / height) * 100;
+                progressBar.style.width = scrolled + "%";
+
+                // トップへ戻るボタンの表示・非表示 (300pxスクロールしたら表示)
+                if (winScroll > 300) {
+                    backToTop.style.display = "flex";
+                } else {
+                    backToTop.style.display = "none";
+                }
+            };
+        }
+
+        initTabs(); initNewBadges(); initAQI(); initScrollEffects();
     </script>
 </body>
 </html>
