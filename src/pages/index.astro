@@ -1,6 +1,7 @@
 ---
 let posts = [];
 try {
+    // 取得先を元の src/pages/posts/*.md に戻しました
     posts = await Astro.glob('./posts/*.md');
 } catch (e) {
     console.error("記事の読み込み失敗", e);
@@ -17,7 +18,6 @@ const sortedPosts = posts
 
 const tabList = [
     { id: "all", label: "トピック" },
-    { id: "search", label: "🔍 検索" },
     { id: "重要・安全", label: "重要・安全" },
     { id: "教育・学校", label: "教育・学校" },
     { id: "ビザ・生活行政", label: "ビザ・行政" },
@@ -32,9 +32,8 @@ const tabList = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>Penang Japanese News</title>
-    <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
     <style>
-        :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; --pagefind-ui-primary: #ce1126; }
+        :root { --pjn-red: #ce1126; --bg-color: #f4f6f8; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; }
         header { background: var(--pjn-red); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
@@ -51,7 +50,6 @@ const tabList = [
         main { padding: 10px; max-width: 1400px; margin: auto; }
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
-        #search-section { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; min-height: 300px; }
         details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
         summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
         .card-meta { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -70,23 +68,16 @@ const tabList = [
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
     </header>
-
-    <div class="info-bar">
-        <span id="pjn-aqi">ペナン空気指数(AQI): 取得中...</span>
-    </div>
-
+    <div class="info-bar"><span id="pjn-aqi">ペナン空気指数(AQI): 取得中...</span></div>
     <nav class="nav-container">
         <ul class="nav-tabs">
-            {tabList.map((tab, index) => (
-                <li class={`tab-item ${index === 0 ? 'active' : ''}`} data-target={tab.id}>{tab.label}</li>
+            {tabList.map((tab) => (
+                <li class={`tab-item ${tab.id === 'all' ? 'active' : ''}`} data-target={tab.id}>{tab.label}</li>
             ))}
         </ul>
     </nav>
     <main>
-        <section id="search-section"><div id="search-ui"></div></section>
-
-        <!-- data-pagefind-ignore をつけることで、トップページの内容は検索対象から外します（重複回避） -->
-        <div class="news-grid" id="news-grid" data-pagefind-ignore>
+        <div class="news-grid" id="news-grid">
             {sortedPosts.map(post => (
                 <details class="article-card" data-category={post.frontmatter.category} data-date={post.frontmatter.date}>
                     <summary>
@@ -97,47 +88,29 @@ const tabList = [
                         </div>
                         <span class="title">{post.frontmatter.title}</span>
                     </summary>
-                    <div class="content">
-                        <post.Content />
-                        <!-- 専用ページへのリンクも念のため設置 -->
-                        <a href={`/posts/${post.file.split('/').pop().replace('.md', '')}`} class="source-link" style="margin-top:20px; display:block; text-align:center;">この記事を単体ページで読む</a>
-                    </div>
+                    <div class="content"><post.Content /></div>
                 </details>
             ))}
         </div>
     </main>
-
-    <script src="/pagefind/pagefind-ui.js" is:inline></script>
     <script is:inline>
         function initTabs() {
             var tabs = document.querySelectorAll('.tab-item');
             var articles = document.querySelectorAll('.article-card');
-            var newsGrid = document.getElementById('news-grid');
-            var searchSection = document.getElementById('search-section');
-
             for (var i = 0; i < tabs.length; i++) {
                 tabs[i].onclick = function() {
                     for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
                     this.classList.add('active');
                     var target = this.getAttribute('data-target');
                     this.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-
-                    if (target === 'search') {
-                        newsGrid.style.display = 'none';
-                        searchSection.style.display = 'block';
-                    } else {
-                        searchSection.style.display = 'none';
-                        newsGrid.style.display = 'grid';
-                        for (var k = 0; k < articles.length; k++) {
-                            var cat = articles[k].getAttribute('data-category');
-                            if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
-                            else articles[k].classList.add('hidden');
-                        }
+                    for (var k = 0; k < articles.length; k++) {
+                        var cat = articles[k].getAttribute('data-category');
+                        if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
+                        else articles[k].classList.add('hidden');
                     }
                 };
             }
         }
-
         function initNewBadges() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
@@ -146,12 +119,9 @@ const tabList = [
                 if (!pubDateStr) continue;
                 var pubDate = new Date(pubDateStr);
                 var diff = (now - pubDate) / 1000 / 60 / 60;
-                if (diff >= 0 && diff < 24) {
-                    articles[i].querySelector('.new-badge').style.display = 'inline-block';
-                }
+                if (diff >= 0 && diff < 24) articles[i].querySelector('.new-badge').style.display = 'inline-block';
             }
         }
-
         function initAQI() {
             var el = document.getElementById('pjn-aqi');
             fetch('https://api.waqi.info/feed/penang/?token=demo')
@@ -166,16 +136,7 @@ const tabList = [
                     }
                 });
         }
-
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof PagefindUI !== 'undefined') {
-                new PagefindUI({ element: "#search-ui", showSubResults: true, translations: { placeholder: "キーワードを入力（例：病院、断水、ビザ）" } });
-            }
-        });
-
-        initTabs();
-        initNewBadges();
-        initAQI();
+        initTabs(); initNewBadges(); initAQI();
     </script>
 </body>
 </html>
