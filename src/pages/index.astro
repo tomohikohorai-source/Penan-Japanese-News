@@ -7,6 +7,7 @@ try {
     console.error("記事の読み込み失敗", e);
 }
 
+// ジャンル設定
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -19,11 +20,39 @@ const tabList = [
     { id: "survival", label: "便利リンク", color: "#444" }
 ];
 
+// 【修正版】31日分の日替わりフレーズ（日にち表記を削除）
 const dailyPhrases = [
-    { q: "1日: 注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来。マレーシア全土で必須。" },
-    // ... (中略) ... 内部的には31日分保持
-    { q: "15日: 「これ（This）」は？", a: "Ini（イニ）", note: "指差しながら「Ini satu」で注文完了。" },
-    { q: "31日: 「何？」と聞く時は？", a: "Apa?（アパ？）", note: "聞き取れなかった時に聞き返します。" }
+    { q: "注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来ですが、マレーシア全土で通じる超必須単語です。" },
+    { q: "「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong（コピ・オー・コソン）", note: "Oは砂糖入り、Kosongは「ゼロ（無）」を意味します。" },
+    { q: "店員さんを呼ぶ時の便利な愛称は？", a: "Boss（ボス）", note: "年齢を問わず、男性店員さんには「Boss!」と呼ぶのがペナン流。" },
+    { q: "「ここで降ろして」とGrabで伝える時は？", a: "Sini saja（シニ・サジャ）", note: "「ここでいいよ（Here only）」という意味で非常に通じやすいです。" },
+    { q: "「いくらですか？」と値段を聞く時は？", a: "Berapa?（ブラパ？）", note: "ショッピングや屋台で大活躍します。Berapa harga?の略です。" },
+    { q: "マングリッシュの定番「Can lah（キャン・ラー）」の意味は？", a: "「できるよ！」「いいよ！」", note: "マレーシアで最も耳にする肯定の表現です。語尾のLahは強調。" },
+    { q: "「ありがとう」はマレー語で？", a: "Terima Kasih（トゥリマ・カシ）", note: "笑顔で言うと、ホーカーのおじちゃんも喜びます。" },
+    { q: "「美味しい！」と伝えたい時は？", a: "Sedap（スダッ！）", note: "「Sedap gila!（スダッ・ギラ！）」と言うと「めちゃくちゃ旨い！」というニュアンスに。" },
+    { q: "お会計をお願いする時のマングリッシュは？", a: "Bill, please / Check, please", note: "マレー語では「Kira（キラ）」と言いますが、英語もよく通じます。" },
+    { q: "「少しだけ」と言いたい時は？", a: "Sikit（シキッ）", note: "辛さを控えめにしてほしい時などに「Sikit saja」と使います。" },
+    { q: "「はい」と「いいえ」は？", a: "Ya（ヤ） / Tidak（ティダッ）", note: "Tidakは会話では短く「Tak（タッ）」と言われることが多いです。" },
+    { q: "「飲み物は店内で」と言いたい時は？", a: "Minum（ミヌム）", note: "店員さんが「Drink?」と聞いてきたら「Minum」で店内、「Tapau」で持ち帰り。" },
+    { q: "飲み物の注文で「砂糖控えめ」は？", a: "Kurang Manis（クラン・マニス）", note: "マレーシアの飲み物は標準だと激甘なので、日本人はこの魔法の言葉を覚えましょう。" },
+    { q: "「欲しい（want）」は？", a: "Nak（ナッ）", note: "「Nak Tapau（持ち帰りたい）」のように、動詞の前に付けて使えます。" },
+    { q: "「これ（This）」は？", a: "Ini（イニ）", note: "指差しながら「Ini satu（これ1つ）」と言うだけで注文完了です。" },
+    { q: "「ある（Have）」は？", a: "Ada（アダ）", note: "在庫を聞く時に便利。「Ada Stock?（在庫ある？）」のように使います。" },
+    { q: "「ない（No have）」は？", a: "Tak ada（タ・アダ）", note: "店員さんに「Habis（ハビス＝売り切れ）」と言われたら「Tak ada」と同じ意味です。" },
+    { q: "「辛い」は？", a: "Pedas（プダス）", note: "「Tak Nak Pedas（辛くしないで）」は、お子様連れには必須の呪文です。" },
+    { q: "年上の女性店員さんへの親しみを込めた呼び方は？", a: "Kakak（カカッ）", note: "お姉さん、という意味。略して「Kak!」と呼ぶのが一般的です。" },
+    { q: "「まだ（Not yet）」は？", a: "Belum（ブルム）", note: "料理が来ない時に「Belum sampai（まだ届いてない）」と使えます。" },
+    { q: "「トイレはどこ？」は？", a: "Tandas kat mana?（タンダス・カッ・マナ？）", note: "Tandas = トイレ、Mana = どこ。緊急時に役立ちます。" },
+    { q: "「（値段が）高い」は？", a: "Mahal（マハル）", note: "観光地で「Mahal lah!（高いよ〜）」と冗談ぽく言うと負けてくれるかも？" },
+    { q: "「安い」は？", a: "Murah（ムラ）", note: "「Very murah!」と褒めると喜ばれます。" },
+    { q: "数字の「1、2、3」は？", a: "Satu, Dua, Tiga（サトゥ、ドゥア、ティガ）", note: "注文個数を伝える時にこれだけ知っていると重宝します。" },
+    { q: "「さあ行こう！」「やろう！」は？", a: "Jom!（ジョム！）", note: "「Jom Makan!（ご飯行こう！）」のように、仲間を誘う時に使います。" },
+    { q: "「上」と「下」は？", a: "Atas（アタス） / Bawah（バワ）", note: "「Floor Atas（上の階）」など、場所の説明に使います。" },
+    { q: "「おはよう」は？", a: "Selamat Pagi（スラマッ・パギ）", note: "コンドのセキュリティの人に挨拶すると、防犯意識が高まります。" },
+    { q: "「ごめんなさい（すみません）」は？", a: "Minta Maaf（ミンタ・マアフ）", note: "誰かとぶつかった時などにサッと言えるとスマートです。" },
+    { q: "「左」と「右」は？", a: "Kiri（キリ） / Kanan（カナン）", note: "Grabの道案内で「Kiri, Boss!（左だよ、ボス！）」と使えます。" },
+    { q: "「まっすぐ」は？", a: "Terus（トゥルス）", note: "「Jalan Terus」で「真っ直ぐ進んで」となります。" },
+    { q: "「何？」と聞く時は？", a: "Apa?（アパ？）", note: "聞き取れなかった時に「Apa?」と聞き返します。" }
 ];
 
 const survivalLinks = [
@@ -37,6 +66,7 @@ const survivalLinks = [
     { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
 ];
 
+// 全記事のソート（日付＋ビルド順）
 const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
@@ -64,66 +94,89 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>Penang Japanese News</title>
     
-    <!-- SEOメタタグの追加 -->
-    <title>Penang Japanese News (PJN) | ペナン現地ニュースを毎日更新</title>
+    <!-- SEOメタタグ -->
     <meta name="description" content="ペナンの一次情報を精査。断水、治安、教育、ビザ、グルメなど、在住日本人に必要な情報を毎日日本語でお届けします。" />
     <meta property="og:title" content="Penang Japanese News (PJN)" />
     <meta property="og:description" content="ペナン在住日本人のための生活・教育・安全ファクトメディア。" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://penan-japanese-news.vercel.app" />
     <meta name="twitter:card" content="summary" />
-    
+
     <style define:vars={{ initialColor: tabList[0].color }}>
         :root { --pjn-red: var(--initialColor); --bg-color: #f4f6f8; --theme-color: var(--initialColor); --article-font-size: 0.95rem; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; transition: font-size 0.2s; }
+        
         body.font-small { --article-font-size: 0.85rem; }
         body.font-medium { --article-font-size: 1rem; }
         body.font-large { --article-font-size: 1.2rem; }
+
         header { background: var(--theme-color); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
+
         #reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 2000; }
         #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
+
         .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 68px; z-index: 999; min-height: 28px; align-items: center;}
         .aqi-container { display: flex; align-items: center; gap: 5px; }
+        .aqi-label { color: #ccc; font-size: 0.7rem; }
         .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; color: white; }
         .aqi-good { background: #009966; } .aqi-moderate { background: #d4af37; color: #000; } .aqi-unhealthy { background: #ce1126; }
+        
         .font-sizer { display: flex; gap: 5px; align-items: center; }
         .font-sizer button { background: #555; color: white; border: none; border-radius: 3px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer; }
         .font-sizer button.active { background: var(--pjn-red); font-weight: bold; }
+
         .nav-container { background: #fff; position: sticky; top: 104px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
         @media (min-width: 768px) { .nav-container { top: 133px; } .info-bar { top: 94px; } header h1 { font-size: 1.6rem; } }
         .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; transition: color 0.3s; }
         .tab-item.active { color: var(--theme-color); border-bottom: 3px solid var(--theme-color); }
+        
         main { padding: 10px; max-width: 1400px; margin: auto; }
+        
         #daily-phrase-section { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #00843d; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .phrase-header { font-size: 0.65rem; font-weight: bold; color: #00843d; text-transform: uppercase; margin-bottom: 5px; }
-        .phrase-q { font-size: 0.95rem; font-weight: bold; color: #111; margin-bottom: 8px; }
+        .phrase-q { font-size: 0.95rem; font-weight: bold; color: #111; margin-bottom: 8px; line-height: 1.4; }
         .phrase-a-box { display: none; background: #f0f9f4; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .phrase-a { font-size: 1.1rem; color: #ce1126; font-weight: 900; }
+        .phrase-a { font-size: 1.1rem; color: #ce1126; font-weight: 900; margin-bottom: 5px; }
+        .phrase-note { font-size: 0.8rem; color: #555; line-height: 1.5; }
         .phrase-btn { background: #00843d; color: white; border: none; padding: 6px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+
         #survival-section { display: none; }
         .survival-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         @media (min-width: 600px) { .survival-grid { grid-template-columns: repeat(4, 1fr); } }
-        .survival-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #333; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
+        .survival-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #333; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .survival-icon { font-size: 1.8rem; margin-bottom: 5px; }
+        .survival-label { font-size: 0.8rem; font-weight: bold; }
+
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
         @media (min-width: 1200px) { details[open] { grid-column: span 2; } }
+
         details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
         summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
+        summary::-webkit-details-marker { display: none; }
+        .card-meta { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .date { font-size: 0.7rem; color: #999; font-weight: bold; }
         .badge { font-size: 0.65rem; background: #f0f0f0; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .new-badge { display: none; font-size: 0.7rem; background: #ff4757; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
-        .title { font-size: 1rem; font-weight: bold; line-height: 1.5; color: #111; }
+        
+        .title { font-size: 1rem; font-weight: bold; line-height: 1.5; color: #111; display: block; }
         .content { padding: 0 18px 18px; border-top: 1px solid #f5f5f5; font-size: var(--article-font-size); line-height: 1.8; color: #444; }
         .hidden { display: none !important; }
+        
         .share-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; display: flex; gap: 10px; }
-        .share-btn { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; cursor: pointer; border: none; text-decoration: none; }
+        .share-btn { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-decoration: none; color: white; cursor: pointer; border: none; }
         .btn-wa { background: #25D366; } .btn-line { background: #06C755; } .btn-copy { background: #666; }
-        #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 1500; font-size: 24px; }
+        .novel-nav { margin-top: 20px; padding: 15px; background: #f9f0ff; border-radius: 8px; display: flex; justify-content: space-between; font-size: 0.85rem; border: 1px solid #e1bee7; }
+        .novel-nav button { background: none; border: none; color: #6a1b9a; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+
+        :global(h3) { font-size: 1.05rem; color: var(--theme-color); margin: 18px 0 10px; border-left: 4px solid var(--theme-color); padding-left: 10px; }
+        #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1500; font-size: 24px; transition: background 0.5s; }
     </style>
 </head>
 <body>
@@ -134,13 +187,14 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     </header>
 
     <div class="info-bar">
-        <div class="aqi-container">
+        <div class="aqi-container" id="pjn-aqi-area">
             <span class="aqi-label">ペナン空気の状態:</span>
             <span id="pjn-aqi-status">取得中...</span>
         </div>
         <div class="font-sizer">
+            <span style="font-size:0.6rem;margin-right:3px;">文字サイズ</span>
             <button id="btn-small" onclick="window.changeFontSize('small', this)">小</button>
-            <button id="btn-medium" class="active" onclick="window.changeFontSize('medium', this)">中</button>
+            <button id="btn-medium" onclick="window.changeFontSize('medium', this)">中</button>
             <button id="btn-large" onclick="window.changeFontSize('large', this)">大</button>
         </div>
     </div>
@@ -167,8 +221,8 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             <div class="survival-grid">
                 {survivalLinks.map(link => (
                     <a href={link.url} target="_blank" class="survival-item">
-                        <span style="font-size:1.8rem">{link.icon}</span>
-                        <span style="font-size:0.8rem;font-weight:bold">{link.label}</span>
+                        <span class="survival-icon">{link.icon}</span>
+                        <span class="survival-label">{link.label}</span>
                     </a>
                 ))}
             </div>
@@ -188,9 +242,9 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                     <div class="content">
                         <post.Content />
                         {post.isNovel && (
-                            <div style="margin-top:20px;padding:15px;background:#f9f0ff;border-radius:8px;display:flex;justify-content:space-between;border:1px solid #e1bee7;">
-                                {post.prevSlug ? <button style="background:none;border:none;color:#6a1b9a;cursor:pointer;font-weight:bold;" onclick={`window.openArticle('${post.prevSlug}')`}>← 前の話</button> : <span></span>}
-                                {post.nextSlug ? <button style="background:none;border:none;color:#6a1b9a;cursor:pointer;font-weight:bold;" onclick={`window.openArticle('${post.nextSlug}')`}>次の話 →</button> : <span></span>}
+                            <div class="novel-nav">
+                                {post.prevSlug ? <button onclick={`window.openArticle('${post.prevSlug}')`}>← 前の話</button> : <span></span>}
+                                {post.nextSlug ? <button onclick={`window.openArticle('${post.nextSlug}')`}>次の話 →</button> : <span></span>}
                             </div>
                         )}
                         <div class="share-box">
@@ -208,7 +262,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <script is:inline define:vars={{ dailyPhrases }}>
         window.loadDailyPhrase = function() {
             const day = new Date().getDate(); 
-            const phrase = dailyPhrases[(day - 1) % dailyPhrases.length] || dailyPhrases[0];
+            const phrase = dailyPhrases[(day - 1) % dailyPhrases.length];
             document.getElementById('phrase-q').innerText = phrase.q;
             document.getElementById('phrase-a').innerText = phrase.a;
             document.getElementById('phrase-note').innerText = phrase.note;
@@ -271,35 +325,3 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                     if (json.status === 'ok') {
                         var aqi = json.data.aqi;
                         var cls = aqi > 100 ? 'aqi-unhealthy' : (aqi > 50 ? 'aqi-moderate' : 'aqi-good');
-                        var txt = aqi > 100 ? '注意' : (aqi > 50 ? '普通' : '良好');
-                        el.innerHTML = '<span class="aqi-value ' + cls + '">' + aqi + ' (' + txt + ')</span>';
-                    }
-                });
-        };
-        window.copyLink = function(slug) {
-            var url = window.location.origin + "/posts/" + slug;
-            navigator.clipboard.writeText(url).then(() => alert("リンクをコピーしました！"));
-        };
-        window.changeFontSize = function(size, btn) {
-            document.body.className = 'font-' + size;
-            document.querySelectorAll('.font-sizer button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            localStorage.setItem('pjn-font-size', size);
-        };
-        window.openArticle = function(slug) {
-            const card = document.querySelector('[data-slug="' + slug + '"]');
-            if (card) {
-                document.querySelectorAll('details').forEach(d => d.open = false);
-                card.open = true;
-                card.scrollIntoView({ behavior: 'smooth' });
-            }
-        };
-        const savedFontSize = localStorage.getItem('pjn-font-size') || 'medium';
-        document.body.className = 'font-' + savedFontSize;
-        const initFontBtn = document.getElementById('btn-' + savedFontSize);
-        if(initFontBtn) initFontBtn.classList.add('active');
-
-        window.initTabs(); window.initNewBadges(); window.initScrollEffects(); window.initAQI(); window.loadDailyPhrase();
-    </script>
-</body>
-</html>
