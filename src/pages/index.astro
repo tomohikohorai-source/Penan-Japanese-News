@@ -1,5 +1,4 @@
 ---
-// --- 1. データの取得と準備 ---
 let posts = [];
 try {
     posts = await Astro.glob('./posts/*.md');
@@ -7,7 +6,27 @@ try {
     console.error("記事の読み込み失敗", e);
 }
 
-// ジャンル設定
+const sortedPosts = posts
+    .filter(post => post && post.frontmatter && post.frontmatter.title)
+    .sort((a, b) => {
+        const dateA = new Date(a.frontmatter.date || 0).getTime();
+        const dateB = new Date(b.frontmatter.date || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return b.file.localeCompare(a.file);
+    });
+
+// 【新設】サバイバルリンクのデータ
+const survivalLinks = [
+    { label: "PBA通報", icon: "💧", url: "https://wa.me/6042558255" },
+    { label: "緊急 999", icon: "🚨", url: "tel:999" },
+    { label: "領事館", icon: "🇯🇵", url: "https://www.penang.my.emb-japan.go.jp/itprtop_ja/index.html" },
+    { label: "日本人会", icon: "🏫", url: "https://pja.org.my/" },
+    { label: "Grab", icon: "🚗", url: "https://www.grab.com/my/" },
+    { label: "MyJPJ", icon: "🪪", url: "https://public.jpj.gov.my/" },
+    { label: "TNG", icon: "📱", url: "https://www.touchngo.com.my/" },
+    { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
+];
+
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -19,42 +38,22 @@ const tabList = [
     { id: "PJN編集長 連載小説", label: "連載小説", color: "#6a1b9a" }
 ];
 
-// 全記事のソート
-const allSortedPosts = posts
-    .filter(post => post && post.frontmatter && post.frontmatter.title)
-    .sort((a, b) => {
-        const dateA = new Date(a.frontmatter.date || 0).getTime();
-        const dateB = new Date(b.frontmatter.date || 0).getTime();
-        if (dateB !== dateA) return dateB - dateA;
-        return b.file.localeCompare(a.file);
-    });
-
-// 小説だけのリスト（ページめくり計算用）
-const novelPosts = allSortedPosts
+// 小説の前後リンク計算用
+const novelPosts = sortedPosts
     .filter(p => p.frontmatter.category === "PJN編集長 連載小説")
-    .reverse(); // 第1回から順に並べる
+    .reverse();
 
-// --- 2. 各記事に必要なデータを事前に計算（ビルドエラー回避） ---
-const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
+const processedPosts = await Promise.all(sortedPosts.map(async (post) => {
     const slug = post.file.split('/').pop().replace('.md', '');
     const isNovel = post.frontmatter.category === "PJN編集長 連載小説";
     let prevSlug = null;
     let nextSlug = null;
-
     if (isNovel) {
         const nIndex = novelPosts.findIndex(p => p.file === post.file);
         if (nIndex > 0) prevSlug = novelPosts[nIndex - 1].file.split('/').pop().replace('.md', '');
         if (nIndex < novelPosts.length - 1) nextSlug = novelPosts[nIndex + 1].file.split('/').pop().replace('.md', '');
     }
-
-    return {
-        ...post,
-        slug,
-        isNovel,
-        prevSlug,
-        nextSlug,
-        Content: post.Content
-    };
+    return { ...post, slug, isNovel, prevSlug, nextSlug, Content: post.Content };
 }));
 ---
 <html lang="ja">
@@ -64,14 +63,18 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <title>Penang Japanese News</title>
     <style define:vars={{ initialColor: tabList[0].color }}>
         :root { --pjn-red: var(--initialColor); --bg-color: #f4f6f8; --theme-color: var(--initialColor); }
-        body { font-family: -apple-system, "Helvetica Neue", sans-serif; margin: 0; background: var(--bg-color); color: #333; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; }
         
         header { background: var(--theme-color); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
         .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
 
-        #reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 2000; }
-        #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
+        /* サバイバルリンク・セクション */
+        .survival-container { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; }
+        .survival-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 1400px; margin: auto; }
+        .survival-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #333; }
+        .survival-icon { font-size: 1.2rem; margin-bottom: 2px; }
+        .survival-label { font-size: 0.65rem; font-weight: bold; color: #666; text-align: center; }
 
         .info-bar { background: #333; color: white; padding: 6px 10px; font-size: 0.75rem; display: flex; justify-content: center; position: sticky; top: 68px; z-index: 999; height: 20px; align-items: center;}
         .aqi-value { font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-left: 5px; }
@@ -90,14 +93,13 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
         @media (min-width: 1200px) { details[open] { grid-column: span 2; } }
 
-        details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
+        details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; transition: 0.2s; }
         summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
         summary::-webkit-details-marker { display: none; }
         .card-meta { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .date { font-size: 0.7rem; color: #999; font-weight: bold; }
         .badge { font-size: 0.65rem; background: #f0f0f0; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .new-badge { display: none; font-size: 0.7rem; background: #ff4757; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
-        
         .title { font-size: 1rem; font-weight: bold; line-height: 1.5; color: #111; display: block; }
         .content { padding: 0 18px 18px; border-top: 1px solid #f5f5f5; font-size: 0.95rem; line-height: 1.8; color: #444; }
         .hidden { display: none !important; }
@@ -109,10 +111,11 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         .novel-nav { margin-top: 20px; padding: 15px; background: #f9f0ff; border-radius: 8px; display: flex; justify-content: space-between; font-size: 0.85rem; border: 1px solid #e1bee7; }
         .novel-nav button { background: none; border: none; color: #6a1b9a; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
 
+        #reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 2000; }
+        #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
+        #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1500; font-size: 24px; transition: background 0.5s; }
         :global(h3) { font-size: 1.05rem; color: var(--theme-color); margin: 18px 0 10px; border-left: 4px solid var(--theme-color); padding-left: 10px; transition: color 0.5s; }
         :global(.source-link) { display: inline-block; margin-top: 15px; font-size: 0.85rem; color: #005596; text-decoration: none; background: #f8f9fa; padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd; }
-
-        #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1500; font-size: 24px; transition: background 0.5s; }
     </style>
 </head>
 <body>
@@ -121,7 +124,21 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
     </header>
+
+    <!-- 【新設】サバイバルリンク -->
+    <div class="survival-container">
+        <div class="survival-grid">
+            {survivalLinks.map(link => (
+                <a href={link.url} target="_blank" class="survival-item">
+                    <span class="survival-icon">{link.icon}</span>
+                    <span class="survival-label">{link.label}</span>
+                </a>
+            ))}
+        </div>
+    </div>
+
     <div class="info-bar"><span id="pjn-aqi">ペナン空気指数(AQI): 取得中...</span></div>
+
     <nav class="nav-container">
         <ul class="nav-tabs">
             {tabList.map((tab) => (
@@ -143,16 +160,13 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                     </summary>
                     <div class="content">
                         <post.Content />
-                        
                         {post.isNovel && (
                             <div class="novel-nav">
                                 {post.prevSlug ? <button onclick={`openArticle('${post.prevSlug}')`}>← 前の話</button> : <span></span>}
                                 {post.nextSlug ? <button onclick={`openArticle('${post.nextSlug}')`}>次の話 →</button> : <span></span>}
                             </div>
                         )}
-
                         <div class="share-box">
-                            <span style="font-size:0.7rem; color:#999; width:100%; margin-bottom:5px;">この記事をシェアする:</span>
                             <a href={`https://wa.me/?text=${encodeURIComponent(post.frontmatter.title + " | PJN https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn btn-wa">WhatsApp</a>
                             <a href={`https://line.me/R/msg/text/?${encodeURIComponent(post.frontmatter.title + " https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn btn-line">LINE</a>
                             <button onclick={`copyLink('${post.slug}')`} class="share-btn btn-copy">リンクコピー</button>
@@ -184,7 +198,6 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 };
             }
         }
-
         function initNewBadges() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
@@ -195,7 +208,6 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 if ((now - pubDate) / 3600000 < 24) articles[i].querySelector('.new-badge').style.display = 'inline-block';
             }
         }
-
         function initScrollEffects() {
             var bar = document.getElementById('reading-progress-bar');
             var btn = document.getElementById('back-to-top');
@@ -206,7 +218,6 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 btn.style.display = top > 300 ? "flex" : "none";
             };
         }
-
         function initAQI() {
             var el = document.getElementById('pjn-aqi');
             fetch('https://api.waqi.info/feed/penang/?token=demo')
@@ -214,16 +225,14 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                     if (json.status === 'ok') {
                         var aqi = json.data.aqi;
                         var cls = aqi > 100 ? 'aqi-unhealthy' : (aqi > 50 ? 'aqi-moderate' : 'aqi-good');
-                        el.innerHTML = 'ペナン大気指数(AQI): <span class="aqi-value ' + cls + '">' + aqi + '</span>';
+                        el.innerHTML = 'ペナン空気指数(AQI): <span class="aqi-value ' + cls + '">' + aqi + '</span>';
                     }
                 });
         }
-
         function copyLink(slug) {
             var url = "https://penan-japanese-news.vercel.app/posts/" + slug;
             navigator.clipboard.writeText(url).then(() => alert("リンクをコピーしました！"));
         }
-
         function openArticle(slug) {
             const card = document.querySelector('[data-slug="' + slug + '"]');
             if (card) {
@@ -232,7 +241,6 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 card.scrollIntoView({ behavior: 'smooth' });
             }
         }
-
         initTabs(); initNewBadges(); initScrollEffects(); initAQI();
     </script>
 </body>
