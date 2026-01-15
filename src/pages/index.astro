@@ -20,7 +20,7 @@ const tabList = [
     { id: "survival", label: "便利リンク", color: "#444" }
 ];
 
-// 【完全版】31日分の日替わりサバイバル語学（マレー語＆マングリッシュ）
+// 31日分の日替わりサバイバル語学
 const dailyPhrases = [
     { q: "1日: 注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来ですが、マレーシア全土で通じる超必須単語です。" },
     { q: "2日: 「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong（コピ・オー・コソン）", note: "Oは砂糖入り、Kosongは「ゼロ（無）」を意味します。" },
@@ -182,9 +182,9 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         </div>
         <div class="font-sizer">
             <span style="font-size:0.6rem;margin-right:3px;">文字サイズ</span>
-            <button id="btn-small" onclick="changeFontSize('small', this)">小</button>
-            <button id="btn-medium" onclick="changeFontSize('medium', this)">中</button>
-            <button id="btn-large" onclick="changeFontSize('large', this)">大</button>
+            <button id="btn-small" onclick="window.changeFontSize('small', this)">小</button>
+            <button id="btn-medium" class="active" onclick="window.changeFontSize('medium', this)">中</button>
+            <button id="btn-large" onclick="window.changeFontSize('large', this)">大</button>
         </div>
     </div>
 
@@ -200,7 +200,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         <section id="daily-phrase-section">
             <div class="phrase-header">🇲🇾 今日のサバイバル語学</div>
             <div class="phrase-q" id="phrase-q">取得中...</div>
-            <button class="phrase-btn" id="phrase-btn" onclick="showPhraseAnswer()">意味を見る</button>
+            <button class="phrase-btn" id="phrase-btn" onclick="window.showPhraseAnswer()">意味を見る</button>
             <div class="phrase-a-box" id="phrase-ans-area">
                 <div class="phrase-a" id="phrase-a">答え</div>
                 <div class="phrase-note" id="phrase-note">解説</div>
@@ -233,14 +233,14 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                         <post.Content />
                         {post.isNovel && (
                             <div class="novel-nav">
-                                {post.prevSlug ? <button onclick={`openArticle('${post.prevSlug}')`}>← 前の話</button> : <span></span>}
-                                {post.nextSlug ? <button onclick={`openArticle('${post.nextSlug}')`}>次の話 →</button> : <span></span>}
+                                {post.prevSlug ? <button onclick={`window.openArticle('${post.prevSlug}')`}>← 前の話</button> : <span></span>}
+                                {post.nextSlug ? <button onclick={`window.openArticle('${post.nextSlug}')`}>次の話 →</button> : <span></span>}
                             </div>
                         )}
                         <div class="share-box">
                             <a href={`https://wa.me/?text=${encodeURIComponent(post.frontmatter.title + " | PJN https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn btn-wa">WhatsApp</a>
                             <a href={`https://line.me/R/msg/text/?${encodeURIComponent(post.frontmatter.title + " https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn btn-line">LINE</a>
-                            <button onclick={`copyLink('${post.slug}')`} class="share-btn btn-copy">リンクコピー</button>
+                            <button onclick={`window.copyLink('${post.slug}')`} class="share-btn btn-copy">リンクコピー</button>
                         </div>
                     </div>
                 </details>
@@ -250,21 +250,22 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
 
     <script is:inline define:vars={{ dailyPhrases }}>
-        // --- 1. デイリーフレーズ・ロジック ---
-        function loadDailyPhrase() {
-            const day = new Date().getDate(); // 1-31
+        // --- すべての関数を明示的に window に登録する ---
+
+        window.loadDailyPhrase = function() {
+            const day = new Date().getDate(); 
             const phrase = dailyPhrases[(day - 1) % dailyPhrases.length];
             document.getElementById('phrase-q').innerText = phrase.q;
             document.getElementById('phrase-a').innerText = phrase.a;
             document.getElementById('phrase-note').innerText = phrase.note;
-        }
-        function showPhraseAnswer() {
+        };
+
+        window.showPhraseAnswer = function() {
             document.getElementById('phrase-ans-area').style.display = 'block';
             document.getElementById('phrase-btn').style.display = 'none';
-        }
+        };
 
-        // --- 2. タブ・カテゴリロジック ---
-        function initTabs() {
+        window.initTabs = function() {
             var tabs = document.querySelectorAll('.tab-item');
             var articles = document.querySelectorAll('.article-card');
             var newsGrid = document.getElementById('news-grid');
@@ -293,10 +294,9 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                     }
                 };
             }
-        }
+        };
 
-        // --- 3. NEWバッジ判定 ---
-        function initNewBadges() {
+        window.initNewBadges = function() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
             for (var i = 0; i < articles.length; i++) {
@@ -305,22 +305,20 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 var pubDate = new Date(pubDateStr);
                 if ((now - pubDate) / 3600000 < 24) articles[i].querySelector('.new-badge').style.display = 'inline-block';
             }
-        }
+        };
 
-        // --- 4. スクロールエフェクト ---
-        function initScrollEffects() {
+        window.initScrollEffects = function() {
             var bar = document.getElementById('reading-progress-bar');
             var btn = document.getElementById('back-to-top');
             window.onscroll = function() {
                 var top = document.documentElement.scrollTop || document.body.scrollTop;
                 var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                bar.style.width = (top / height * 100) + "%";
+                if(height > 0) bar.style.width = (top / height * 100) + "%";
                 btn.style.display = top > 300 ? "flex" : "none";
             };
-        }
+        };
 
-        // --- 5. 大気質(AQI)取得 ---
-        function initAQI() {
+        window.initAQI = function() {
             var el = document.getElementById('pjn-aqi-status');
             fetch('https://api.waqi.info/feed/penang/?token=demo')
                 .then(res => res.json()).then(json => {
@@ -331,19 +329,20 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                         el.innerHTML = '<span class="aqi-value ' + cls + '">' + aqi + ' (' + txt + ')</span>';
                     }
                 });
-        }
+        };
 
-        // --- 6. 便利機能 ---
         window.copyLink = function(slug) {
             var url = "https://penan-japanese-news.vercel.app/posts/" + slug;
             navigator.clipboard.writeText(url).then(() => alert("リンクをコピーしました！"));
-        }
+        };
+
         window.changeFontSize = function(size, btn) {
             document.body.className = 'font-' + size;
             document.querySelectorAll('.font-sizer button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             localStorage.setItem('pjn-font-size', size);
-        }
+        };
+
         window.openArticle = function(slug) {
             const card = document.querySelector('[data-slug="' + slug + '"]');
             if (card) {
@@ -351,16 +350,19 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 card.open = true;
                 card.scrollIntoView({ behavior: 'smooth' });
             }
-        }
+        };
 
-        // 初期復元
+        // 初期実行
         const savedFontSize = localStorage.getItem('pjn-font-size') || 'medium';
         document.body.className = 'font-' + savedFontSize;
-        document.querySelectorAll('.font-sizer button').forEach(b => {
-            if (b.id === 'btn-' + savedFontSize) b.classList.add('active');
-        });
+        const initFontBtn = document.getElementById('btn-' + savedFontSize);
+        if(initFontBtn) initFontBtn.classList.add('active');
 
-        initTabs(); initNewBadges(); initScrollEffects(); initAQI(); loadDailyPhrase();
+        window.initTabs(); 
+        window.initNewBadges(); 
+        window.initScrollEffects(); 
+        window.initAQI(); 
+        window.loadDailyPhrase();
     </script>
 </body>
 </html>
