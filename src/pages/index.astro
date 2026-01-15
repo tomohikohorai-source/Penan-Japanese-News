@@ -20,7 +20,7 @@ const tabList = [
     { id: "survival", label: "便利リンク", color: "#444" }
 ];
 
-// 【修正版】31日分の日替わりフレーズ（日にち表記を削除）
+// 31日分のフレーズデータ
 const dailyPhrases = [
     { q: "注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来ですが、マレーシア全土で通じる超必須単語です。" },
     { q: "「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong（コピ・オー・コソン）", note: "Oは砂糖入り、Kosongは「ゼロ（無）」を意味します。" },
@@ -66,7 +66,6 @@ const survivalLinks = [
     { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
 ];
 
-// 全記事のソート（日付＋ビルド順）
 const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
@@ -260,23 +259,30 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
 
     <script is:inline define:vars={{ dailyPhrases }}>
+        // ロジックを明示的に定義
         window.loadDailyPhrase = function() {
-            const day = new Date().getDate(); 
-            const phrase = dailyPhrases[(day - 1) % dailyPhrases.length];
-            document.getElementById('phrase-q').innerText = phrase.q;
-            document.getElementById('phrase-a').innerText = phrase.a;
-            document.getElementById('phrase-note').innerText = phrase.note;
+            var day = new Date().getDate(); 
+            var phrase = dailyPhrases[(day - 1) % dailyPhrases.length];
+            var qEl = document.getElementById('phrase-q');
+            var aEl = document.getElementById('phrase-a');
+            var nEl = document.getElementById('phrase-note');
+            if (qEl) qEl.innerText = phrase.q;
+            if (aEl) aEl.innerText = phrase.a;
+            if (nEl) nEl.innerText = phrase.note;
         };
+
         window.showPhraseAnswer = function() {
             document.getElementById('phrase-ans-area').style.display = 'block';
             document.getElementById('phrase-btn').style.display = 'none';
         };
+
         window.initTabs = function() {
             var tabs = document.querySelectorAll('.tab-item');
             var articles = document.querySelectorAll('.article-card');
             var newsGrid = document.getElementById('news-grid');
             var survivalSection = document.getElementById('survival-section');
             var phraseSection = document.getElementById('daily-phrase-section');
+
             for (var i = 0; i < tabs.length; i++) {
                 tabs[i].onclick = function() {
                     var color = this.getAttribute('data-color');
@@ -285,9 +291,11 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                     for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
                     this.classList.add('active');
                     this.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                    phraseSection.style.display = (target === 'all') ? 'block' : 'none';
-                    newsGrid.style.display = (target === 'survival') ? 'none' : 'grid';
-                    survivalSection.style.display = (target === 'survival') ? 'block' : 'none';
+
+                    if (phraseSection) phraseSection.style.display = (target === 'all') ? 'block' : 'none';
+                    if (newsGrid) newsGrid.style.display = (target === 'survival') ? 'none' : 'grid';
+                    if (survivalSection) survivalSection.style.display = (target === 'survival') ? 'block' : 'none';
+
                     if (target !== 'survival') {
                         for (var k = 0; k < articles.length; k++) {
                             var cat = articles[k].getAttribute('data-category');
@@ -298,6 +306,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 };
             }
         };
+
         window.initNewBadges = function() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
@@ -305,23 +314,39 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 var pubDateStr = articles[i].getAttribute('data-date');
                 if (!pubDateStr) continue;
                 var pubDate = new Date(pubDateStr);
-                if ((now - pubDate) / 3600000 < 24) articles[i].querySelector('.new-badge').style.display = 'inline-block';
+                if ((now - pubDate) / 3600000 < 24) {
+                    var badge = articles[i].querySelector('.new-badge');
+                    if (badge) badge.style.display = 'inline-block';
+                }
             }
         };
+
         window.initScrollEffects = function() {
             var bar = document.getElementById('reading-progress-bar');
             var btn = document.getElementById('back-to-top');
             window.onscroll = function() {
                 var top = document.documentElement.scrollTop || document.body.scrollTop;
                 var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                if(height > 0) bar.style.width = (top / height * 100) + "%";
-                btn.style.display = top > 300 ? "flex" : "none";
+                if(bar && height > 0) bar.style.width = (top / height * 100) + "%";
+                if(btn) btn.style.display = top > 300 ? "flex" : "none";
             };
         };
+
         window.initAQI = function() {
             var el = document.getElementById('pjn-aqi-status');
+            if (!el) return;
             fetch('https://api.waqi.info/feed/penang/?token=demo')
-                .then(res => res.json()).then(json => {
+                .then(function(res) { return res.json(); })
+                .then(function(json) {
                     if (json.status === 'ok') {
                         var aqi = json.data.aqi;
                         var cls = aqi > 100 ? 'aqi-unhealthy' : (aqi > 50 ? 'aqi-moderate' : 'aqi-good');
+                        var txt = aqi > 100 ? '注意' : (aqi > 50 ? '普通' : '良好');
+                        el.innerHTML = '<span class="aqi-value ' + cls + '">' + aqi + ' (' + txt + ')</span>';
+                    }
+                });
+        };
+
+        window.copyLink = function(slug) {
+            var url = "https://penan-japanese-news.vercel.app/posts/" + slug;
+            navigator.clipboard.writeText(url).then(function() { alert("リンクをコピーしました
