@@ -7,7 +7,7 @@ try {
     console.error("記事の読み込み失敗", e);
 }
 
-// ジャンル設定
+// ジャンル設定（便利リンクを最後に配置）
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -20,7 +20,7 @@ const tabList = [
     { id: "survival", label: "便利リンク", color: "#444" }
 ];
 
-// 31日分の日替わりサバイバル語学
+// 31日分のサバイバル語学講座データ
 const dailyPhrases = [
     { q: "1日: 注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来ですが、マレーシア全土で通じる超必須単語です。" },
     { q: "2日: 「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong（コピ・オー・コソン）", note: "Oは砂糖入り、Kosongは「ゼロ（無）」を意味します。" },
@@ -66,6 +66,7 @@ const survivalLinks = [
     { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
 ];
 
+// 全記事のソート（日付＋ビルド順）
 const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
@@ -111,7 +112,8 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
 
         .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 68px; z-index: 999; min-height: 28px; align-items: center;}
         .aqi-container { display: flex; align-items: center; gap: 5px; }
-        .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; color: white; }
+        .aqi-label { color: #ccc; font-size: 0.7rem; }
+        .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; color: white; }
         .aqi-good { background: #009966; } .aqi-moderate { background: #d4af37; color: #000; } .aqi-unhealthy { background: #ce1126; }
         
         .font-sizer { display: flex; gap: 5px; align-items: center; }
@@ -196,9 +198,9 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         </ul>
     </nav>
     <main>
-        <!-- デイリーフレーズ・セクション -->
+        <!-- 🇲🇾 今日のマレー語＆マングリッシュ講座 コーナー -->
         <section id="daily-phrase-section">
-            <div class="phrase-header">🇲🇾 今日のサバイバル語学</div>
+            <div class="phrase-header">🇲🇾 今日のマレー語＆マングリッシュ講座</div>
             <div class="phrase-q" id="phrase-q">取得中...</div>
             <button class="phrase-btn" id="phrase-btn" onclick="window.showPhraseAnswer()">意味を見る</button>
             <div class="phrase-a-box" id="phrase-ans-area">
@@ -250,8 +252,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
 
     <script is:inline define:vars={{ dailyPhrases }}>
-        // --- すべての関数を明示的に window に登録する ---
-
+        // --- 1. デイリーフレーズ ---
         window.loadDailyPhrase = function() {
             const day = new Date().getDate(); 
             const phrase = dailyPhrases[(day - 1) % dailyPhrases.length];
@@ -259,12 +260,12 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             document.getElementById('phrase-a').innerText = phrase.a;
             document.getElementById('phrase-note').innerText = phrase.note;
         };
-
         window.showPhraseAnswer = function() {
             document.getElementById('phrase-ans-area').style.display = 'block';
             document.getElementById('phrase-btn').style.display = 'none';
         };
 
+        // --- 2. タブ・カテゴリ ---
         window.initTabs = function() {
             var tabs = document.querySelectorAll('.tab-item');
             var articles = document.querySelectorAll('.article-card');
@@ -296,6 +297,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             }
         };
 
+        // --- 3. NEWバッジ ---
         window.initNewBadges = function() {
             var now = new Date();
             var articles = document.querySelectorAll('.article-card');
@@ -307,6 +309,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             }
         };
 
+        // --- 4. スクロールエフェクト ---
         window.initScrollEffects = function() {
             var bar = document.getElementById('reading-progress-bar');
             var btn = document.getElementById('back-to-top');
@@ -318,6 +321,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             };
         };
 
+        // --- 5. 大気質(AQI) ---
         window.initAQI = function() {
             var el = document.getElementById('pjn-aqi-status');
             fetch('https://api.waqi.info/feed/penang/?token=demo')
@@ -331,18 +335,17 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 });
         };
 
+        // --- 6. ユーティリティ ---
         window.copyLink = function(slug) {
             var url = "https://penan-japanese-news.vercel.app/posts/" + slug;
             navigator.clipboard.writeText(url).then(() => alert("リンクをコピーしました！"));
         };
-
         window.changeFontSize = function(size, btn) {
             document.body.className = 'font-' + size;
             document.querySelectorAll('.font-sizer button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             localStorage.setItem('pjn-font-size', size);
         };
-
         window.openArticle = function(slug) {
             const card = document.querySelector('[data-slug="' + slug + '"]');
             if (card) {
@@ -352,17 +355,13 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             }
         };
 
-        // 初期実行
+        // 初期化
         const savedFontSize = localStorage.getItem('pjn-font-size') || 'medium';
         document.body.className = 'font-' + savedFontSize;
         const initFontBtn = document.getElementById('btn-' + savedFontSize);
         if(initFontBtn) initFontBtn.classList.add('active');
 
-        window.initTabs(); 
-        window.initNewBadges(); 
-        window.initScrollEffects(); 
-        window.initAQI(); 
-        window.loadDailyPhrase();
+        window.initTabs(); window.initNewBadges(); window.initScrollEffects(); window.initAQI(); window.loadDailyPhrase();
     </script>
 </body>
 </html>
