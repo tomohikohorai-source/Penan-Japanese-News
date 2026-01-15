@@ -6,13 +6,12 @@ category: "教育・学校"
 <div class="genre-label">ジャンル：教育・学校</div>
 <h3>【学校行事】タンジュン・ブンガ校舎での現地見学会</h3>
 
-タンジュン・ブンガに位置するプリンス・オブ・ウェールズ島校（POWIIS Primary）の公式Instagramにて、次回の学校見学会の詳細が公開されました。
+プリンス・オブ・ウェールズ島校（POWIIS Primary）の公式告知によると、今月下旬にキャンパス見学会が開催されます。
 
-・日時：2026年1月24日（土）午前9時 〜 午前11時
-・内容：教職員によるプレゼンテーション、校内施設見学、個別相談
-・予約：専用オンラインフォームからの事前登録制
+・日時：1月24日（土）09:00 〜 11:00
+・内容：教職員による説明、校内施設見学、個別相談
+・予約：公式サイトより事前登録制
 
-同校はイギリス式カリキュラムを採用しており、特に音楽や演劇などの芸術教育に定評があります。
-新年度（9月入学）に向けた一次募集の時期にあたるため、居住エリア近くでの通学を検討されている家庭にとって重要な機会となります。
+新年度（9月）に向けた募集が本格化する時期です。英国式カリキュラムや、同校の特徴である芸術教育に興味のある家庭には重要な機会となります。
 
-<a href="https://www.instagram.com/p/powiisprimary_official/" target="_blank" rel="noopener noreferrer" class="source-link">🔗 参照：POWIIS Primary 公式Instagram告知 (2026/01/15)</a>
+<a href="https://www.powiis.edu.my/" target="_blank" rel="noopener noreferrer" class="source-link">🔗 参照：Prince of Wales Island International School 公式告知 (2026/01/15)</a>
