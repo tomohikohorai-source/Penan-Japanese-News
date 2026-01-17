@@ -18,4 +18,4 @@ Touch 'n Go eWallet（TNG）が本日より開始したプロモーションに�
 決済前にアプリ内の「Promotions」タブからバウチャーの取得が必要な場合があるため、
 レジに並ぶ前に設定を確認しておくのが賢明です。
 
-<a href="https://www.touchngo.com.my/consumer/promotions/" target="_blank" rel="noopener noreferrer" class="source-link">🔗 参照：Touch 'n Go eWallet 公式プロモーション（2026/01/17確認）</a>
+<a href="https://www.touchngo.com.my/promotion/" target="_blank" rel="noopener noreferrer" class="source-link">🔗 参照元：Touch 'n Go eWallet 公式プロモーション一覧（2026/01/17確認済）</a>
