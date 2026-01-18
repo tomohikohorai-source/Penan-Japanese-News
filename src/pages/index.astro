@@ -1,5 +1,5 @@
 ---
-// --- 1. データの取得 ---
+// --- 1. データの取得（ビルド時） ---
 let posts = [];
 try {
     posts = await Astro.glob('../posts/*.md');
@@ -32,7 +32,7 @@ const dailyPhrases = [
     { q: "「ありがとう」はマレー語で？", a: "Terima Kasih", note: "笑顔で言うと喜ばれます。" },
     { q: "「美味しい！」と伝えたい時は？", a: "Sedap", note: "「Sedap gila!」で「めちゃくちゃ旨い！」" },
     { q: "お会計をお願いする時は？", a: "Bill, please", note: "英語でもマレー語（Kira）でも通じます。" },
-    { q: "「少しだけ」と言いたい時は？", a: "Sikit", note: "辛さを控えめにしてほしい時などに「Sikit saja」と使います。" },
+    { q: "「少しだけ」と言いたい時は？", a: "Sikit", note: "辛さを控えてほしい時に使います。" },
     { q: "「はい」と「いいえ」は？", a: "Ya / Tak", note: "会話ではTidakを短くTakと言います。" },
     { q: "「店内で飲む」と言いたい時は？", a: "Minum", note: "Drink?と聞かれたらMinum（店内）かTapau（外）。" },
     { q: "「砂糖控えめ」は？", a: "Kurang Manis", note: "マレーシアの飲み物は標準だと激甘です。" },
@@ -109,31 +109,33 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         body.font-medium { --article-font-size: 1rem; }
         body.font-large { --article-font-size: 1.2rem; }
         
-        /* ヘッダー：隙間を埋めるためにmargin/paddingを調整 */
-        header { background: var(--theme-color); color: white; padding: 1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s; margin: 0; border: none; }
+        /* 1段目：ヘッダー */
+        header { background: var(--theme-color); color: white; padding: 1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1003; transition: background 0.5s; margin: 0; }
         header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 1px; }
         .site-desc { font-size: 0.75rem; margin-top: 4px; opacity: 0.9; }
 
-        /* 検索窓：ヘッダー直下に配置 */
-        .search-box-container { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; margin: 0; }
+        /* 2段目：検索窓（固定） */
+        .search-box-container { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; position: sticky; top: 74px; z-index: 1002; margin: 0; }
         #search-ui { max-width: 600px; margin: 0 auto; --pagefind-ui-scale: 0.8; }
         
-        /* 検索結果をすべて表示し、スクロール可能にする設定 */
+        /* 検索結果：スクロール可能（ページの一部として表示） */
         :global(.pagefind-ui__drawer) { position: static !important; max-height: none !important; visibility: visible !important; opacity: 1 !important; display: block !important; }
-        :global(.pagefind-ui__results-area) { padding: 10px 0 !important; }
 
-        /* インフォバー：ヘッダーの高さに合わせてtopを調整 */
-        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 74px; z-index: 999; min-height: 28px; align-items: center; margin: 0; }
-        @media (min-width: 768px) { .info-bar { top: 84px; } header h1 { font-size: 1.6rem; } }
+        /* 3段目：インフォバー（固定） */
+        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 136px; z-index: 1001; min-height: 28px; align-items: center; margin: 0; }
 
-        .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; color: white; }
-        .aqi-good { background: #009966; } .aqi-moderate { background: #d4af37; color: #000; } .aqi-unhealthy { background: #ce1126; }
-        .font-sizer button { background: #555; color: white; border: none; border-radius: 3px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer; }
-        .font-sizer button.active { background: var(--pjn-red); font-weight: bold; }
+        /* 4段目：ナビゲーション（固定） */
+        .nav-container { background: #fff; position: sticky; top: 164px; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; margin: 0; }
 
-        /* ナビゲーション：インフォバーの高さに合わせてtopを調整 */
-        .nav-container { background: #fff; position: sticky; top: 102px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; margin: 0; }
-        @media (min-width: 768px) { .nav-container { top: 112px; } }
+        /* PC版の高さ調整 */
+        @media (min-width: 768px) { 
+            .search-box-container { top: 84px; }
+            .info-bar { top: 146px; }
+            .nav-container { top: 174px; }
+            header h1 { font-size: 1.6rem; }
+        }
+
+        .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; transition: color 0.3s; }
         .tab-item.active { color: var(--theme-color); border-bottom: 3px solid var(--theme-color); }
@@ -163,6 +165,7 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         .share-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; display: flex; gap: 10px; }
         .share-btn { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-decoration: none; border: none; cursor: pointer;}
         #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; z-index: 1500; font-size: 24px; cursor: pointer;}
+        #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
     </style>
 </head>
 <body>
