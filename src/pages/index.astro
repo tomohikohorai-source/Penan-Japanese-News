@@ -1,12 +1,14 @@
 ---
-// --- 1. データの取得（ビルド時） ---
+// --- 1. データの取得（新旧両方の場所を探す設定に変更） ---
 let posts = [];
 try {
-    posts = await Astro.glob('../posts/*.md');
+    // pages/posts の中と、src/posts の中の両方を探します
+    posts = await Astro.glob(['./posts/*.md', '../posts/*.md']);
 } catch (e) {
     console.error("記事の読み込み失敗");
 }
 
+// ジャンル設定
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -22,38 +24,39 @@ const tabList = [
     { id: "about", label: "案内・規約", color: "#666" }
 ];
 
+// 31日分のマレー語講座データ
 const dailyPhrases = [
-    { q: "注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来。マレーシア全土で必須。" },
-    { q: "「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong", note: "Oは砂糖入り、Kosongは無を意味します。" },
-    { q: "店員さんを呼ぶ時の便利な愛称は？", a: "Boss（ボス）", note: "男性店員にはBoss!と呼ぶのがペナン流。" },
-    { q: "「ここで降ろして」とGrabで伝える時は？", a: "Sini saja", note: "「ここでいいよ」という意味で通じます。" },
-    { q: "「いくらですか？」と値段を聞く時は？", a: "Berapa?", note: "ショッピングや屋台で大活躍します。" },
-    { q: "マングリッシュの定番「Can lah」の意味は？", a: "「できるよ！」「いいよ！」", note: "語尾のLahは強調の定番です。" },
-    { q: "「ありがとう」はマレー語で？", a: "Terima Kasih", note: "笑顔で言うと喜ばれます。" },
-    { q: "「美味しい！」と伝えたい時は？", a: "Sedap", note: "「Sedap gila!」で「めちゃくちゃ旨い！」" },
-    { q: "お会計をお願いする時は？", a: "Bill, please", note: "英語でもマレー語（Kira）でも通じます。" },
-    { q: "「少しだけ」と言いたい時は？", a: "Sikit", note: "辛さを控えてほしい時に使います。" },
-    { q: "「はい」と「いいえ」は？", a: "Ya / Tak", note: "会話ではTidakを短くTakと言います。" },
-    { q: "「店内で飲む」と言いたい時は？", a: "Minum", note: "Drink?と聞かれたらMinum（店内）かTapau（外）。" },
-    { q: "「砂糖控えめ」は？", a: "Kurang Manis", note: "マレーシアの飲み物は標準だと激甘です。" },
-    { q: "「欲しい」は？", a: "Nak", note: "Nak Tapau（持ち帰りたい）のように使います。" },
-    { q: "「これ」は？", a: "Ini", note: "指差しながら「Ini satu」で1つ注文。" },
-    { q: "「ある（Have）」は？", a: "Ada", note: "在庫を聞く時に便利。「Ada Stock?（在庫ある？）」。" },
-    { q: "「ない（No have）」は？", a: "Tak ada", note: "Habis（ハビス＝売り切れ）もよく使われます。" },
-    { q: "「辛い」は？", a: "Pedas", note: "「Tak Nak Pedas」で辛くしないで。" },
-    { q: "女性店員さんへの愛称は？", a: "Kakak", note: "お姉さん。略してKak!と呼びます。" },
-    { q: "「まだ（Not yet）」は？", a: "Belum", note: "料理が来ない時にBelum sampai。" },
-    { q: "「トイレはどこ？」は？", a: "Tandas kat mana?", note: "Tandas=トイレ、Mana=どこ。" },
-    { q: "「高い」は？", a: "Mahal", note: "高いよ〜と言うと安くなるかも？" },
-    { q: "「安い」は？", a: "Murah", note: "Very murah!と褒めましょう。" },
-    { q: "数字の1, 2, 3は？", a: "Satu, Dua, Tiga", note: "サトゥ、ドゥア、ティガ。個数に便利。" },
-    { q: "「行こう！」は？", a: "Jom!", note: "Jom Makan!（ご飯行こう！）" },
-    { q: "「上」と「下」は？", a: "Atas / Bawah", note: "場所の説明によく使います。" },
-    { q: "「おはよう」は？", a: "Selamat Pagi", note: "セキュリティへの挨拶に。" },
-    { q: "「ごめんなさい」は？", a: "Minta Maaf", note: "謝る時に。カジュアルにはSorry。" },
-    { q: "「左」と「右」は？", a: "Kiri / Kanan", note: "Grabの道案内に重宝します。" },
-    { q: "「まっすぐ」は？", a: "Terus", note: "Jalan Terusでまっすぐ。" },
-    { q: "「何？」は？", a: "Apa?", note: "聞き取れなかった時に聞き返します。" }
+    { q: "注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", n: "広東語由来。マレーシア全土で必須。" },
+    { q: "「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong", n: "Oは砂糖入り、Kosongは無を意味します。" },
+    { q: "店員さんを呼ぶ時の便利な愛称は？", a: "Boss（ボス）", n: "男性店員にはBoss!と呼ぶのがペナン流。" },
+    { q: "「ここで降ろして」とGrabで伝える時は？", a: "Sini saja", n: "「ここでいいよ」という意味で通じます。" },
+    { q: "「いくらですか？」と値段を聞く時は？", a: "Berapa?", n: "ショッピングや屋台で大活躍します。" },
+    { q: "マングリッシュの定番「Can lah」の意味は？", a: "「できるよ！」「いいよ！」", n: "語尾のLahは強調の定番です。" },
+    { q: "「ありがとう」はマレー語で？", a: "Terima Kasih", n: "笑顔で言うと喜ばれます。" },
+    { q: "「美味しい！」と伝えたい時は？", a: "Sedap", n: "「Sedap gila!」で「めちゃくちゃ旨い！」" },
+    { q: "お会計をお願いする時は？", a: "Bill, please", n: "英語でもマレー語（Kira）でも通じます。" },
+    { q: "「少しだけ」と言いたい時は？", a: "Sikit", n: "辛さを控えてほしい時に使います。" },
+    { q: "「はい」と「いいえ」は？", a: "Ya / Tak", n: "会話ではTidakを短くTakと言います。" },
+    { q: "「店内で飲む」と言いたい時は？", a: "Minum", n: "Drink?と聞かれたらMinum（店内）かTapau（外）。" },
+    { q: "「砂糖控えめ」は？", a: "Kurang Manis", n: "マレーシアの飲み物は標準だと激甘です。" },
+    { q: "「欲しい」は？", a: "Nak", n: "Nak Tapau（持ち帰りたい）のように使います。" },
+    { q: "「これ」は？", a: "Ini", n: "指差しながら「Ini satu」で1つ注文。" },
+    { q: "「ある（Have）」は？", a: "Ada", n: "在庫を聞く時に便利。「Ada Stock?（在庫ある？）」。" },
+    { q: "「ない（No have）」は？", a: "Tak ada", n: "Habis（ハビス＝売り切れ）もよく使われます。" },
+    { q: "「辛い」は？", a: "Pedas", n: "「Tak Nak Pedas」で辛くしないで。" },
+    { q: "女性店員さんへの愛称は？", a: "Kakak", n: "お姉さん。略してKak!と呼びます。" },
+    { q: "「まだ（Not yet）」は？", a: "Belum", n: "料理が来ない時にBelum sampai。" },
+    { q: "「トイレはどこ？」は？", a: "Tandas kat mana?", n: "Tandas=トイレ、Mana=どこ。" },
+    { q: "「高い」は？", a: "Mahal", n: "高いよ〜と言うと安くなるかも？" },
+    { q: "「安い」は？", a: "Murah", n: "Very murah!と褒めましょう。" },
+    { q: "数字の1, 2, 3は？", a: "Satu, Dua, Tiga", n: "サトゥ、ドゥア、ティガ。個数に便利。" },
+    { q: "「行こう！」は？", a: "Jom!", n: "Jom Makan!（ご飯行こう！）" },
+    { q: "「上」と「下」は？", a: "Atas / Bawah", n: "場所の説明によく使います。" },
+    { q: "「おはよう」は？", a: "Selamat Pagi", n: "セキュリティへの挨拶に。" },
+    { q: "「すみません」は？", a: "Minta Maaf", n: "謝る時に。カジュアルにはSorry。" },
+    { q: "「左」と「右」は？", a: "Kiri / Kanan", n: "Grabの道案内に重宝します。" },
+    { q: "「まっすぐ」は？", a: "Terus", n: "Jalan Terusでまっすぐ。" },
+    { q: "「何？」は？", a: "Apa?", n: "聞き取れなかった時に聞き返します。" }
 ];
 
 const survivalLinks = [
@@ -67,6 +70,7 @@ const survivalLinks = [
     { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
 ];
 
+// 徹底した並び替えロジック
 const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
@@ -78,7 +82,10 @@ const allSortedPosts = posts
             if (cat === "コラム") return 2;
             return 1;
         };
-        return getPriority(a.frontmatter.category) - getPriority(b.frontmatter.category) || b.file.localeCompare(a.file);
+        const pA = getPriority(a.frontmatter.category);
+        const pB = getPriority(b.frontmatter.category);
+        if (pA !== pB) return pA - pB;
+        return b.file.localeCompare(a.file);
     });
 
 const novelPosts = allSortedPosts.filter(p => p.frontmatter.category === "PJN編集長 連載小説").reverse();
@@ -110,37 +117,27 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         body.font-large { --article-font-size: 1.2rem; }
         
         /* 1段目：ヘッダー */
-        header { background: var(--theme-color); color: white; padding: 1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1003; transition: background 0.5s; margin: 0; display: block; }
+        header { background: var(--theme-color); color: white; padding: 1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1003; transition: background 0.5s; margin: 0; }
         header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 1px; }
         .site-desc { font-size: 0.75rem; margin-top: 4px; opacity: 0.9; }
 
         /* 2段目：検索窓（固定） */
-        .search-box-container { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; position: sticky; top: 74px; z-index: 1002; margin: 0; display: block; }
+        .search-box-container { background: #fff; padding: 10px; border-bottom: 1px solid #ddd; position: sticky; top: 70px; z-index: 1002; margin: 0; }
         #search-ui { max-width: 600px; margin: 0 auto; --pagefind-ui-scale: 0.8; }
         
-        /* 検索結果：スクロール可能（独立したスクロールエリア） */
-        :global(.pagefind-ui__drawer) { 
-            position: absolute !important; 
-            top: 100%; left: 0; width: 100%;
-            max-height: 60vh !important; 
-            overflow-y: auto !important; 
-            background: white !important; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            z-index: 1005 !important;
-            border-bottom: 2px solid var(--pjn-red);
-        }
+        /* 検索結果：スクロール可能 */
+        :global(.pagefind-ui__drawer) { position: absolute !important; top: 100%; left: 0; width: 100%; max-height: 60vh !important; overflow-y: auto !important; background: white !important; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1005 !important; border-bottom: 2px solid var(--pjn-red); }
 
         /* 3段目：インフォバー（固定） */
-        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 136px; z-index: 1001; min-height: 28px; align-items: center; margin: 0; }
+        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 132px; z-index: 1001; min-height: 28px; align-items: center; margin: 0; }
 
         /* 4段目：ナビゲーション（固定） */
-        .nav-container { background: #fff; position: sticky; top: 164px; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; margin: 0; }
+        .nav-container { background: #fff; position: sticky; top: 160px; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; margin: 0; }
 
-        /* PC版の高さ調整（隙間を埋める） */
         @media (min-width: 768px) { 
-            .search-box-container { top: 84px; }
-            .info-bar { top: 146px; }
-            .nav-container { top: 174px; }
+            .search-box-container { top: 80px; }
+            .info-bar { top: 142px; }
+            .nav-container { top: 170px; }
             header h1 { font-size: 1.6rem; }
         }
 
@@ -174,11 +171,10 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         .share-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; display: flex; gap: 10px; }
         .share-btn { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-decoration: none; border: none; cursor: pointer;}
         #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; z-index: 1500; font-size: 24px; cursor: pointer;}
-        #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
     </style>
 </head>
 <body>
-    <div id="reading-progress-container"><div id="reading-progress-bar"></div></div>
+    <div id="reading-progress-container"><div id="reading-progress-bar" style="height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease;"></div></div>
     <header>
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
@@ -193,3 +189,197 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         <div class="font-sizer">
             <button id="btn-small" onclick="window.changeFontSize('small', this)">小</button>
             <button id="btn-medium" onclick="window.changeFontSize('medium', this)">中</button>
+            <button id="btn-large" onclick="window.changeFontSize('large', this)">大</button>
+        </div>
+    </div>
+
+    <nav class="nav-container">
+        <ul class="nav-tabs">
+            {tabList.map((tab) => (
+                <li class={`tab-item ${tab.id === 'all' ? 'active' : ''}`} data-target={tab.id} data-color={tab.color}>{tab.label}</li>
+            ))}
+        </ul>
+    </nav>
+    <main>
+        <section id="daily-phrase-section">
+            <div class="phrase-header">🇲🇾 今日のマレー語＆マングリッシュ講座</div>
+            <div class="phrase-q" id="phrase-q">読込中...</div>
+            <button class="phrase-btn" id="phrase-btn" onclick="window.showPhraseAnswer()">意味を見る</button>
+            <div class="phrase-a-box" id="phrase-ans-area">
+                <div class="phrase-a" id="phrase-a"></div>
+                <div class="phrase-note" id="phrase-note"></div>
+            </div>
+        </section>
+
+        <section id="about-section">
+            <div class="about-content">
+                <h3 style="border-left: 5px solid var(--pjn-red); padding-left: 10px; margin-bottom: 10px;">PJNメディア概要</h3>
+                <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">Penang Japanese News (PJN) は、ペナン在住の日本人、留学生、駐在員ご家族のために、現地の一次情報を精査・再構成して日本語で届ける独立系ニュースメディアです。</p>
+            </div>
+        </section>
+
+        <section id="survival-section">
+            <div class="survival-grid">
+                {survivalLinks.map(link => (
+                    <a href={link.url} target="_blank" class="survival-item">
+                        <span style="font-size:1.8rem">{link.icon}</span>
+                        <span style="font-size:0.8rem;font-weight:bold">{link.label}</span>
+                    </a>
+                ))}
+            </div>
+        </section>
+
+        <div class="news-grid" id="news-grid" data-pagefind-ignore>
+            {processedPosts.map((post) => (
+                <details class="article-card" data-category={post.frontmatter.category} data-date={post.frontmatter.date} data-slug={post.slug}>
+                    <summary>
+                        <div class="card-meta">
+                            <span class="date">{(post.frontmatter.date || "").toString().split('-').join('/')}</span>
+                            <span class="badge">{post.frontmatter.category}</span>
+                            <span class="new-badge">NEW</span>
+                        </div>
+                        <span class="title">{post.frontmatter.title}</span>
+                    </summary>
+                    <div class="content">
+                        <post.Content />
+                        {post.isNovel && (
+                            <div style="margin-top:20px;padding:15px;background:#f9f0ff;border-radius:8px;display:flex;justify-content:space-between;border:1px solid #e1bee7;">
+                                {post.prevSlug ? <button style="background:none;border:none;color:#6a1b9a;cursor:pointer;font-weight:bold;" onclick={`window.openArticle('${post.prevSlug}')`}>← 前の話</button> : <span></span>}
+                                {post.nextSlug ? <button style="background:none;border:none;color:#6a1b9a;cursor:pointer;font-weight:bold;" onclick={`window.openArticle('${post.nextSlug}')`}>次の話 →</button> : <span></span>}
+                            </div>
+                        )}
+                        <div class="share-box">
+                            <a href={`https://wa.me/?text=${encodeURIComponent(post.frontmatter.title + " | PJN https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn" style="background:#25D366">WhatsApp</a>
+                            <a href={`https://line.me/R/msg/text/?${encodeURIComponent(post.frontmatter.title + " https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn" style="background:#06C755">LINE</a>
+                            <button onclick={`window.copyLink('${post.slug}')`} class="share-btn" style="background:#666">リンクコピー</button>
+                        </div>
+                    </div>
+                </details>
+            ))}
+        </div>
+    </main>
+    <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
+
+    <script src="/pagefind/pagefind-ui.js" is:inline></script>
+    <script is:inline define:vars={{ dailyPhrases }}>
+        var phrases = dailyPhrases;
+        window.loadDailyPhrase = function() {
+            try {
+                var day = new Date().getDate();
+                var p = phrases[(day - 1) % phrases.length];
+                document.getElementById('phrase-q').innerText = p.q;
+                document.getElementById('phrase-a').innerText = p.a;
+                document.getElementById('phrase-note').innerText = p.note;
+            } catch(e) {}
+        };
+        window.showPhraseAnswer = function() {
+            try {
+                document.getElementById('phrase-ans-area').style.display = 'block';
+                document.getElementById('phrase-btn').style.display = 'none';
+            } catch(e) {}
+        };
+        window.initTabs = function() {
+            try {
+                var tabs = document.querySelectorAll('.tab-item');
+                var articles = document.querySelectorAll('.article-card');
+                var newsGrid = document.getElementById('news-grid');
+                var survivalSec = document.getElementById('survival-section');
+                var phraseSec = document.getElementById('daily-phrase-section');
+                var aboutSec = document.getElementById('about-section');
+                for (var i = 0; i < tabs.length; i++) {
+                    tabs[i].onclick = function() {
+                        var color = this.getAttribute('data-color');
+                        var target = this.getAttribute('data-target');
+                        document.documentElement.style.setProperty('--theme-color', color);
+                        for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
+                        this.classList.add('active');
+                        this.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                        if (phraseSec) phraseSec.style.display = (target === 'all') ? 'block' : 'none';
+                        if (newsGrid) newsGrid.style.display = (target === 'survival' || target === 'about') ? 'none' : 'grid';
+                        if (survivalSec) survivalSec.style.display = (target === 'survival') ? 'block' : 'none';
+                        if (aboutSec) aboutSec.style.display = (target === 'about') ? 'block' : 'none';
+                        if (target !== 'survival' && target !== 'about') {
+                            for (var k = 0; k < articles.length; k++) {
+                                var cat = articles[k].getAttribute('data-category');
+                                if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
+                                else articles[k].classList.add('hidden');
+                            }
+                        }
+                    };
+                }
+            } catch(e) {}
+        };
+        window.initAQI = function() {
+            try {
+                var el = document.getElementById('pjn-aqi-status');
+                fetch('https://api.waqi.info/feed/penang/?token=demo')
+                    .then(function(r) { return r.json(); })
+                    .then(function(j) {
+                        if (j.status === 'ok') {
+                            var a = j.data.aqi;
+                            var c = a > 100 ? 'aqi-unhealthy' : (a > 50 ? 'aqi-moderate' : 'aqi-good');
+                            var t = a > 100 ? '注意' : (a > 50 ? '普通' : '良好');
+                            el.innerHTML = '<span class="aqi-value ' + c + '">' + a + ' (' + t + ')</span>';
+                        }
+                    }).catch(function(){ el.innerText = "オフライン"; });
+            } catch(e) {}
+        };
+        window.initNewBadges = function() {
+            try {
+                var now = new Date();
+                var articles = document.querySelectorAll('.article-card');
+                for (var i = 0; i < articles.length; i++) {
+                    var d = articles[i].getAttribute('data-date');
+                    if (d && (now - new Date(d)) / 3600000 < 24) {
+                        var badge = articles[i].querySelector('.new-badge');
+                        if (badge) badge.style.display = 'inline-block';
+                    }
+                }
+            } catch(e) {}
+        };
+        window.initScroll = function() {
+            try {
+                var bar = document.getElementById('reading-progress-bar');
+                var btn = document.getElementById('back-to-top');
+                window.onscroll = function() {
+                    var top = document.documentElement.scrollTop || document.body.scrollTop;
+                    var h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    if (bar && h > 0) bar.style.width = (top / h * 100) + "%";
+                    if (btn) btn.style.display = top > 300 ? "flex" : "none";
+                };
+            } catch(e) {}
+        };
+        window.changeFontSize = function(s, b) {
+            try {
+                document.body.className = 'font-' + s;
+                document.querySelectorAll('.font-sizer button').forEach(function(el) { el.classList.remove('active'); });
+                b.classList.add('active');
+                localStorage.setItem('pjn-fs', s);
+            } catch(e) {}
+        };
+        window.copyLink = function(s) {
+            navigator.clipboard.writeText(window.location.origin + "/posts/" + s).then(function() { alert("リンクをコピーしました！"); });
+        };
+        window.openArticle = function(s) {
+            try {
+                var card = document.querySelector('[data-slug="' + s + '"]');
+                if (card) {
+                    document.querySelectorAll('details').forEach(function(d) { d.open = false; });
+                    card.open = true;
+                    card.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch(e) {}
+        };
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof PagefindUI !== 'undefined') {
+                new PagefindUI({ element: "#search-ui", showSubResults: true, translations: { placeholder: "記事を検索" } });
+            }
+        });
+        var fs = localStorage.getItem('pjn-fs') || 'medium';
+        document.body.className = 'font-' + fs;
+        var btn = document.getElementById('btn-' + fs);
+        if (btn) btn.classList.add('active');
+        window.loadDailyPhrase(); window.initTabs(); window.initNewBadges(); window.initScroll(); window.initAQI();
+    </script>
+</body>
+</html>
