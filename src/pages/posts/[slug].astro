@@ -1,20 +1,14 @@
 ---
-// 記事専用ページのテンプレート
 export async function getStaticPaths() {
-  // 引っ越し先の「src/posts/」にある .md ファイルをすべて取得
   const posts = await Astro.glob('../../posts/*.md');
   return posts.map(post => ({
-    params: { 
-      slug: post.file.split('/').pop().replace('.md', '') 
-    },
+    params: { slug: post.file.split('/').pop().replace('.md', '') },
     props: { post },
   }));
 }
-
 const { post } = Astro.props;
 const { Content } = post;
 
-// タブリスト（テーマカラー取得用）
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -28,9 +22,8 @@ const tabList = [
     { id: "PJN編集長 連載小説", label: "連載小説", color: "#e91e63" },
     { id: "survival", label: "便利リンク", color: "#444" }
 ];
-
-// 記事のカテゴリに合わせてテーマカラーを決定
 const themeColor = tabList.find(t => t.id === post.frontmatter.category)?.color || "#ce1126";
+const slug = post.file.split('/').pop().replace('.md', '');
 ---
 <html lang="ja">
 <head>
@@ -38,28 +31,28 @@ const themeColor = tabList.find(t => t.id === post.frontmatter.category)?.color 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{post.frontmatter.title} - PJN</title>
     <style define:vars={{ themeColor }}>
-        :root { --pjn-red: var(--themeColor); --bg-color: #f4f6f8; }
+        :root { --pjn-red: var(--themeColor); --bg-color: #f4f6f8; --article-font-size: 1rem; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; line-height: 1.8; }
+        body.font-small { --article-font-size: 0.85rem; }
+        body.font-medium { --article-font-size: 1rem; }
+        body.font-large { --article-font-size: 1.2rem; }
         header { background: var(--pjn-red); color: white; padding: 1.5rem 1rem; text-align: center; }
         header a { color: white; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
         main { padding: 20px; max-width: 800px; margin: 20px auto; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-height: 80vh; }
         .meta { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
         .badge { background: #f0f0f0; color: #555; padding: 3px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; }
         h1 { font-size: 1.6rem; line-height: 1.4; color: #111; margin: 10px 0 20px 0; border-left: 6px solid var(--pjn-red); padding-left: 15px; }
-        
-        /* 記事本文のスタイル */
-        .content { font-size: 1rem; }
+        .content { font-size: var(--article-font-size); }
         :global(h3) { font-size: 1.2rem; color: var(--pjn-red); border-bottom: 2px solid var(--pjn-red); padding-bottom: 5px; margin-top: 30px; }
         :global(p) { margin-bottom: 1.5rem; }
         :global(.source-link) { display: inline-block; margin-top: 30px; font-size: 0.9rem; color: #005596; text-decoration: none; background: #f8f9fa; padding: 10px 20px; border-radius: 6px; border: 1px solid #ddd; }
-        
+        .share-box { margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; display: flex; gap: 10px; }
+        .share-btn { padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: white; text-decoration: none; border: none; cursor: pointer; }
         footer { text-align: center; padding: 40px 20px; font-size: 0.8rem; color: #999; }
     </style>
 </head>
-<body>
+<body class="font-medium">
     <header><a href="/">← PENANG JAPANESE NEWS TOP</a></header>
-    
-    <!-- data-pagefind-body をつけることで、Pagefindがこの中身を検索対象にします -->
     <main data-pagefind-body>
         <div class="meta">
             <span class="badge">{post.frontmatter.category}</span>
@@ -69,17 +62,19 @@ const themeColor = tabList.find(t => t.id === post.frontmatter.category)?.color 
         <div class="content">
             <Content />
         </div>
+        <div class="share-box">
+            <a href={`https://wa.me/?text=${encodeURIComponent(post.frontmatter.title + " | PJN https://penan-japanese-news.vercel.app/posts/" + slug)}`} target="_blank" class="share-btn" style="background:#25D366">WhatsApp</a>
+            <a href={`https://line.me/R/msg/text/?${encodeURIComponent(post.frontmatter.title + " https://penan-japanese-news.vercel.app/posts/" + slug)}`} target="_blank" class="share-btn" style="background:#06C755">LINE</a>
+            <button onclick="copyThisLink()" class="share-btn" style="background:#666">リンクコピー</button>
+        </div>
     </main>
-
-    <footer>
-        &copy; 2026 Penang Japanese News (PJN)
-    </footer>
-
+    <footer>&copy; 2026 Penang Japanese News (PJN)</footer>
     <script is:inline>
-        // トップページで設定した文字サイズを反映させる
         const savedFontSize = localStorage.getItem('pjn-fs') || 'medium';
-        if (savedFontSize === 'small') document.body.style.fontSize = '0.85rem';
-        if (savedFontSize === 'large') document.body.style.fontSize = '1.2rem';
+        document.body.className = 'font-' + savedFontSize;
+        function copyThisLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => alert("リンクをコピーしました！"));
+        }
     </script>
 </body>
 </html>
