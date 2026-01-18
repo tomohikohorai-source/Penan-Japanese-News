@@ -2,12 +2,11 @@
 // --- 1. データの取得 ---
 let posts = [];
 try {
-    posts = await Astro.glob('../posts/*.md'); // 引っ越し先に合わせて変更
+    posts = await Astro.glob('../posts/*.md');
 } catch (e) {
     console.error("記事の読み込み失敗");
 }
 
-// ジャンル設定（色分けを強化）
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -17,8 +16,8 @@ const tabList = [
     { id: "医療・健康", label: "医療・健康", color: "#00838f" },
     { id: "グルメ・店", label: "グルメ・店", color: "#ef6c00" },
     { id: "お得・経済", label: "お得・経済", color: "#d4af37" },
-    { id: "コラム", label: "編集長コラム", color: "#9c27b0" }, // 紫
-    { id: "PJN編集長 連載小説", label: "連載小説", color: "#e91e63" }, // ピンクに変更
+    { id: "コラム", label: "編集長コラム", color: "#9c27b0" },
+    { id: "PJN編集長 連載小説", label: "連載小説", color: "#e91e63" },
     { id: "survival", label: "便利リンク", color: "#444" },
     { id: "about", label: "案内・規約", color: "#666" }
 ];
@@ -52,7 +51,7 @@ const dailyPhrases = [
     { q: "「行こう！」は？", a: "Jom!", note: "Jom Makan!（ご飯行こう！）" },
     { q: "「上」と「下」は？", a: "Atas / Bawah", note: "場所の説明によく使います。" },
     { q: "「おはよう」は？", a: "Selamat Pagi", note: "セキュリティへの挨拶に。" },
-    { q: "「すみません」は？", a: "Minta Maaf", note: "謝る時に。カジュアルにはSorry。" },
+    { q: "「ごめんなさい」は？", a: "Minta Maaf", note: "謝る時に。カジュアルにはSorry。" },
     { q: "「左」と「右」は？", a: "Kiri / Kanan", note: "Grabの道案内に重宝します。" },
     { q: "「まっすぐ」は？", a: "Terus", note: "Jalan Terusでまっすぐ。" },
     { q: "「何？」は？", a: "Apa?", note: "聞き取れなかった時に聞き返します。" }
@@ -69,7 +68,6 @@ const survivalLinks = [
     { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
 ];
 
-// 徹底した並び替えロジック
 const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
@@ -81,10 +79,7 @@ const allSortedPosts = posts
             if (cat === "コラム") return 2;
             return 1;
         };
-        const pA = getPriority(a.frontmatter.category);
-        const pB = getPriority(b.frontmatter.category);
-        if (pA !== pB) return pA - pB;
-        return b.file.localeCompare(a.file);
+        return getPriority(a.frontmatter.category) - getPriority(b.frontmatter.category) || b.file.localeCompare(a.file);
     });
 
 const novelPosts = allSortedPosts.filter(p => p.frontmatter.category === "PJN編集長 連載小説").reverse();
@@ -114,66 +109,82 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         body.font-small { --article-font-size: 0.85rem; }
         body.font-medium { --article-font-size: 1rem; }
         body.font-large { --article-font-size: 1.2rem; }
-        header { background: var(--theme-color); color: white; padding: 1.2rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
-        header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 1px; font-weight: bold; }
-        .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
         
-        /* 検索窓の配置 */
-        .search-container { max-width: 500px; margin: 10px auto 0; padding: 0 15px; }
-        #search-ui { --pagefind-ui-scale: 0.75; --pagefind-ui-background: #fff; border-radius: 8px; overflow: hidden; }
+        /* ヘッダーレイアウト：タイトルと検索窓を横並びに */
+        header { background: var(--theme-color); color: white; padding: 1rem; position: sticky; top: 0; z-index: 1000; transition: background 0.5s; }
+        .header-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header-text { text-align: left; flex: 1; min-width: 200px; }
+        header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 1px; }
+        .site-desc { font-size: 0.75rem; margin-top: 4px; opacity: 0.9; }
+
+        /* 検索窓：右寄せ ＆ デザイン修正 */
+        .search-container { flex: 1; min-width: 280px; max-width: 400px; }
+        #search-ui { 
+            --pagefind-ui-background: #ffffff; 
+            --pagefind-ui-text: #333333; 
+            --pagefind-ui-border: #ddd;
+            --pagefind-ui-scale: 0.7;
+            border-radius: 8px; overflow: hidden;
+        }
+        /* 検索結果が赤背景にならないように強制上書き */
+        :global(.pagefind-ui__drawer) { background: #ffffff !important; color: #333 !important; border-radius: 0 0 8px 8px; }
+        :global(.pagefind-ui__result-link) { color: var(--pjn-red) !important; }
 
         #reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 2000; }
         #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
-        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 125px; z-index: 999; min-height: 28px; align-items: center;}
-        @media (max-width: 768px) { .info-bar { top: 135px; } }
+
+        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 115px; z-index: 999; min-height: 28px; align-items: center;}
+        @media (max-width: 768px) { .info-bar { top: 135px; } .header-inner { flex-direction: column; text-align: center; } .header-text { text-align: center; } }
+
         .aqi-container { display: flex; align-items: center; gap: 5px; }
         .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; color: white; }
         .aqi-good { background: #009966; } .aqi-moderate { background: #d4af37; color: #000; } .aqi-unhealthy { background: #ce1126; }
         .font-sizer button { background: #555; color: white; border: none; border-radius: 3px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer; }
         .font-sizer button.active { background: var(--pjn-red); font-weight: bold; }
-        .nav-container { background: #fff; position: sticky; top: 153px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+
+        .nav-container { background: #fff; position: sticky; top: 143px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; }
         @media (min-width: 768px) { .nav-container { top: 153px; } }
-        .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; transition: color 0.3s; }
         .tab-item.active { color: var(--theme-color); border-bottom: 3px solid var(--theme-color); }
+        
         main { padding: 10px; max-width: 1400px; margin: auto; }
         #daily-phrase-section { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #00843d; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .phrase-header { font-size: 0.65rem; font-weight: bold; color: #00843d; text-transform: uppercase; margin-bottom: 5px; }
-        .phrase-q { font-size: 0.95rem; font-weight: bold; color: #111; margin-bottom: 8px; }
         .phrase-a-box { display: none; background: #f0f9f4; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .phrase-a { font-size: 1.1rem; color: #ce1126; font-weight: 900; }
         .phrase-btn { background: #00843d; color: white; border: none; padding: 6px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        #survival-section, #about-section { display: none; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        
+        #survival-section, #about-section { display: none; background: #fff; padding: 20px; border-radius: 12px; }
         .survival-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         @media (min-width: 600px) { .survival-grid { grid-template-columns: repeat(4, 1fr); } }
         .survival-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #333; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
+        
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
         @media (min-width: 1200px) { details[open] { grid-column: span 2; } }
         details { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; height: fit-content; }
-        summary { padding: 18px; list-style: none; cursor: pointer; display: block; outline: none; }
+        summary { padding: 18px; list-style: none; cursor: pointer; outline: none; }
         .date { font-size: 0.7rem; color: #999; font-weight: bold; }
         .badge { font-size: 0.65rem; background: #f0f0f0; color: #555; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        
-        /* NEWバッジ：赤色に固定 */
         .new-badge { display: none; font-size: 0.7rem; background: #ff4757 !important; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
-        
         .title { font-size: 1rem; font-weight: bold; line-height: 1.5; color: #111; }
         .content { padding: 0 18px 18px; border-top: 1px solid #f5f5f5; font-size: var(--article-font-size); line-height: 1.8; color: #444; }
         .hidden { display: none !important; }
         .share-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; display: flex; gap: 10px; }
         .share-btn { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-decoration: none; border: none; cursor: pointer;}
-        .btn-wa { background: #25D366; } .btn-line { background: #06C755; } .btn-copy { background: #666; }
         #back-to-top { position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px; background: var(--theme-color); color: white; border-radius: 50%; border: none; display: none; align-items: center; justify-content: center; z-index: 1500; font-size: 24px; cursor: pointer;}
     </style>
 </head>
 <body>
     <div id="reading-progress-container"><div id="reading-progress-bar"></div></div>
     <header>
-        <h1>PENANG JAPANESE NEWS</h1>
-        <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
-        <div class="search-container"><div id="search-ui"></div></div>
+        <div class="header-inner">
+            <div class="header-text">
+                <h1>PENANG JAPANESE NEWS</h1>
+                <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
+            </div>
+            <div class="search-container"><div id="search-ui"></div></div>
+        </div>
     </header>
 
     <div class="info-bar">
@@ -205,10 +216,8 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
 
         <section id="about-section">
             <div class="about-content">
-                <h3>PJNメディア概要</h3>
-                <p>Penang Japanese News (PJN) は、ペナン在住の日本人、留学生、駐在員ご家族のために、現地の一次情報を精査・再構成して日本語で届ける独立系ニュースメディアです。</p>
-                <h3>著作権ポリシー</h3>
-                <p>当サイトに掲載されている記事は、複数の現地メディア等の事実情報を基に、独自の構成・見出し・表現で執筆された「日本語による独自記事」です。</p>
+                <h3 style="border-left: 5px solid var(--pjn-red); padding-left: 10px; margin-bottom: 10px;">PJNメディア概要</h3>
+                <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">Penang Japanese News (PJN) は、ペナン在住の日本人、留学生、駐在員ご家族のために、現地の一次情報を精査・再構成して日本語で届ける独立系ニュースメディアです。</p>
             </div>
         </section>
 
@@ -223,7 +232,6 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             </div>
         </section>
 
-        <!-- data-pagefind-ignore を追加してトップページ自体の重複インデックスを防止 -->
         <div class="news-grid" id="news-grid" data-pagefind-ignore>
             {processedPosts.map((post) => (
                 <details class="article-card" data-category={post.frontmatter.category} data-date={post.frontmatter.date} data-slug={post.slug}>
@@ -244,9 +252,9 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                             </div>
                         )}
                         <div class="share-box">
-                            <a href={`https://wa.me/?text=${encodeURIComponent(post.frontmatter.title + " | PJN https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn btn-wa">WhatsApp</a>
-                            <a href={`https://line.me/R/msg/text/?${encodeURIComponent(post.frontmatter.title + " https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn btn-line">LINE</a>
-                            <button onclick={`window.copyLink('${post.slug}')`} class="share-btn btn-copy">リンクコピー</button>
+                            <a href={`https://wa.me/?text=${encodeURIComponent(post.frontmatter.title + " | PJN https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn" style="background:#25D366">WhatsApp</a>
+                            <a href={`https://line.me/R/msg/text/?${encodeURIComponent(post.frontmatter.title + " https://penan-japanese-news.vercel.app/posts/" + post.slug)}`} target="_blank" class="share-btn" style="background:#06C755">LINE</a>
+                            <button onclick={`window.copyLink('${post.slug}')`} class="share-btn" style="background:#666">リンクコピー</button>
                         </div>
                     </div>
                 </details>
