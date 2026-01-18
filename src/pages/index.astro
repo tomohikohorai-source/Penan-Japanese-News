@@ -1,5 +1,5 @@
 ---
-// --- 1. データの取得（ビルド時処理） ---
+// --- 1. データの取得と準備 ---
 let posts = [];
 try {
     posts = await Astro.glob('./posts/*.md');
@@ -7,7 +7,7 @@ try {
     console.error("記事の読み込み失敗");
 }
 
-// ジャンル設定
+// ジャンル設定（全タブ復元）
 const tabList = [
     { id: "all", label: "トピック", color: "#ce1126" },
     { id: "重要・安全", label: "重要・安全", color: "#ce1126" },
@@ -23,7 +23,7 @@ const tabList = [
     { id: "about", label: "案内・規約", color: "#666" }
 ];
 
-// 31日分のマレー語講座データ（1文字も省略なし）
+// 31日分のマレー語講座データ（完全復元）
 const dailyPhrases = [
     { q: "注文時に「お持ち帰り」と言いたい時は？", a: "Tapau（タパオ）", note: "広東語由来。マレーシア全土で必須。" },
     { q: "「砂糖抜き（ブラック）」のコーヒーを頼む時は？", a: "Kopi O Kosong", note: "Oは砂糖入り、Kosongは無を意味します。" },
@@ -40,7 +40,7 @@ const dailyPhrases = [
     { q: "「砂糖控えめ」は？", a: "Kurang Manis", note: "マレーシアの飲み物は標準だと激甘です。" },
     { q: "「欲しい」は？", a: "Nak", note: "Nak Tapau（持ち帰りたい）のように使います。" },
     { q: "「これ」は？", a: "Ini", note: "指差しながら「Ini satu」で1つ注文。" },
-    { q: "「ある（Have）」は？", a: "Ada", note: "在庫を聞く時に便利。「Ada Stock?（在庫ある？）」のように便利。" },
+    { q: "「ある（Have）」は？", a: "Ada", note: "在庫を聞く時に便利。「Ada Stock?（在庫ある？）」。" },
     { q: "「ない（No have）」は？", a: "Tak ada", note: "Habis（ハビス＝売り切れ）もよく使われます。" },
     { q: "「辛い」は？", a: "Pedas", note: "「Tak Nak Pedas」で辛くしないで。" },
     { q: "女性店員さんへの愛称は？", a: "Kakak", note: "お姉さん。略してKak!と呼びます。" },
@@ -69,14 +69,12 @@ const survivalLinks = [
     { label: "Wise", icon: "💸", url: "https://wise.com/jp/" }
 ];
 
-// 徹底した並び替えロジック
 const allSortedPosts = posts
     .filter(post => post && post.frontmatter && post.frontmatter.title)
     .sort((a, b) => {
         const dateA = new Date(a.frontmatter.date || 0).getTime();
         const dateB = new Date(b.frontmatter.date || 0).getTime();
         if (dateB !== dateA) return dateB - dateA;
-
         const getPriority = (cat) => {
             if (cat === "PJN編集長 連載小説") return 3;
             if (cat === "コラム") return 2;
@@ -109,31 +107,43 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <title>Penang Japanese News (PJN)</title>
     <meta name="description" content="ペナンの一次情報を精査。断水、治安、教育、ビザ、グルメなど、在住日本人に必要な情報を毎日日本語でお届けします。" />
     
+    <!-- Pagefind UIのスタイル -->
+    <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
+
     <style define:vars={{ initialColor: tabList[0].color }}>
-        :root { --pjn-red: var(--initialColor); --bg-color: #f4f6f8; --theme-color: var(--initialColor); --article-font-size: 0.95rem; }
+        :root { --pjn-red: var(--initialColor); --bg-color: #f4f6f8; --theme-color: var(--initialColor); --article-font-size: 0.95rem; --pagefind-ui-primary: #ce1126; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg-color); color: #333; transition: font-size 0.2s; }
         body.font-small { --article-font-size: 0.85rem; }
         body.font-medium { --article-font-size: 1rem; }
         body.font-large { --article-font-size: 1.2rem; }
-        header { background: var(--theme-color); color: white; padding: 1.1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
+
+        header { background: var(--theme-color); color: white; padding: 1rem 0.5rem; text-align: center; position: sticky; top: 0; z-index: 1000; transition: background 0.5s ease; }
         header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; font-weight: bold; }
-        .site-desc { font-size: 0.8rem; margin-top: 4px; opacity: 0.95; }
+        .site-desc { font-size: 0.75rem; margin-top: 4px; opacity: 0.9; }
+
+        /* 【新設】ヘッダー内検索バー */
+        .search-container { max-width: 400px; margin: 10px auto 0; padding: 0 10px; }
+        #search-ui { --pagefind-ui-scale: 0.7; --pagefind-ui-background: #fff; }
+
         #reading-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: transparent; z-index: 2000; }
         #reading-progress-bar { height: 100%; width: 0%; background: #ffde33; transition: width 0.1s ease; }
-        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 68px; z-index: 999; min-height: 28px; align-items: center;}
+
+        .info-bar { background: #333; color: white; padding: 6px 12px; font-size: 0.75rem; display: flex; justify-content: space-between; position: sticky; top: 105px; z-index: 999; min-height: 28px; align-items: center;}
+        @media (max-width: 768px) { .info-bar { top: 115px; } }
+
         .aqi-container { display: flex; align-items: center; gap: 5px; }
-        .aqi-label { color: #ccc; font-size: 0.7rem; }
-        .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; color: white; }
+        .aqi-value { font-weight: bold; padding: 2px 8px; border-radius: 4px; color: white; }
         .aqi-good { background: #009966; } .aqi-moderate { background: #d4af37; color: #000; } .aqi-unhealthy { background: #ce1126; }
-        .font-sizer { display: flex; gap: 5px; align-items: center; }
         .font-sizer button { background: #555; color: white; border: none; border-radius: 3px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer; }
         .font-sizer button.active { background: var(--pjn-red); font-weight: bold; }
-        .nav-container { background: #fff; position: sticky; top: 104px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-        @media (min-width: 768px) { .nav-container { top: 133px; } .info-bar { top: 94px; } header h1 { font-size: 1.6rem; } }
+
+        .nav-container { background: #fff; position: sticky; top: 141px; z-index: 998; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        @media (min-width: 768px) { .nav-container { top: 122px; header h1 { font-size: 1.6rem; } } }
         .nav-container::-webkit-scrollbar { display: none; }
         .nav-tabs { display: inline-flex; padding: 0 10px; margin: 0; list-style: none; }
         .tab-item { padding: 14px 20px; font-weight: bold; font-size: 0.9rem; color: #666; cursor: pointer; position: relative; transition: color 0.3s; }
         .tab-item.active { color: var(--theme-color); border-bottom: 3px solid var(--theme-color); }
+        
         main { padding: 10px; max-width: 1400px; margin: auto; }
         #daily-phrase-section { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #00843d; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .phrase-header { font-size: 0.65rem; font-weight: bold; color: #00843d; text-transform: uppercase; margin-bottom: 5px; }
@@ -141,10 +151,12 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
         .phrase-a-box { display: none; background: #f0f9f4; padding: 10px; border-radius: 8px; margin-top: 10px; }
         .phrase-a { font-size: 1.1rem; color: #ce1126; font-weight: 900; }
         .phrase-btn { background: #00843d; color: white; border: none; padding: 6px 15px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        
         #survival-section, #about-section { display: none; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .survival-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         @media (min-width: 600px) { .survival-grid { grid-template-columns: repeat(4, 1fr); } }
         .survival-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #333; padding: 15px; border: 1px solid #eee; border-radius: 10px; background: #fff; }
+        
         .news-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
         @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
         @media (min-width: 1200px) { details[open] { grid-column: span 2; } }
@@ -167,13 +179,14 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     <header>
         <h1>PENANG JAPANESE NEWS</h1>
         <p class="site-desc">ペナン現地ニュースを厳選、毎日日本語で更新</p>
+        <!-- 検索バーをヘッダーに配置 -->
+        <div class="search-container">
+            <div id="search-ui"></div>
+        </div>
     </header>
 
     <div class="info-bar">
-        <div class="aqi-container">
-            <span class="aqi-label">ペナン空気の状態:</span>
-            <span id="pjn-aqi-status">取得中...</span>
-        </div>
+        <div class="aqi-container"><span class="aqi-label">ペナン空気の状態:</span><span id="pjn-aqi-status">取得中...</span></div>
         <div class="font-sizer">
             <button id="btn-small" onclick="window.changeFontSize('small', this)">小</button>
             <button id="btn-medium" onclick="window.changeFontSize('medium', this)">中</button>
@@ -204,9 +217,9 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
                 <h3 style="border-left: 5px solid var(--pjn-red); padding-left: 10px; margin-bottom: 10px;">PJNメディア概要</h3>
                 <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">Penang Japanese News (PJN) は、ペナン在住の日本人、留学生、駐在員ご家族のために、現地の一次情報を精査・再構成して日本語で届ける独立系ニュースメディアです。</p>
                 <h3 style="border-left: 5px solid var(--pjn-red); padding-left: 10px; margin-bottom: 10px;">著作権ポリシー</h3>
-                <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">当サイトに掲載されている記事は、複数の現地メディア等の事実情報を基に、独自の構成・見出し・表現で執筆された「日本語による独自記事」です。記事全文の無断転載は固く禁止します。</p>
+                <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">当サイトに掲載されている記事は、複数の現地メディア等の事実情報を基に、独自の構成・見出し・表現で執筆された「日本語による独自記事」です。</p>
                 <h3 style="border-left: 5px solid var(--pjn-red); padding-left: 10px; margin-bottom: 10px;">免責事項</h3>
-                <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">当サイトは情報の正確性に万全を期していますが、状況変化等により内容が実情と異なる場合があります。掲載情報に基づいて発生した損害について、当サイトは一切の責任を負いかねます。</p>
+                <p style="line-height: 1.6; margin-bottom: 15px; font-size: 0.9rem;">当サイトは情報の正確性に万全を期していますが、状況変化等により内容が実情と異なる場合があります。</p>
             </div>
         </section>
 
@@ -252,6 +265,8 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
     </main>
     <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑</button>
 
+    <!-- Pagefind UIのスクリプト -->
+    <script src="/pagefind/pagefind-ui.js" is:inline></script>
     <script is:inline define:vars={{ dailyPhrases }}>
         var phrases = dailyPhrases;
         window.loadDailyPhrase = function() {
@@ -267,105 +282,4 @@ const processedPosts = await Promise.all(allSortedPosts.map(async (post) => {
             try {
                 document.getElementById('phrase-ans-area').style.display = 'block';
                 document.getElementById('phrase-btn').style.display = 'none';
-            } catch(e) {}
-        };
-        window.initTabs = function() {
-            try {
-                var tabs = document.querySelectorAll('.tab-item');
-                var articles = document.querySelectorAll('.article-card');
-                var newsGrid = document.getElementById('news-grid');
-                var survivalSec = document.getElementById('survival-section');
-                var phraseSec = document.getElementById('daily-phrase-section');
-                var aboutSec = document.getElementById('about-section');
-                for (var i = 0; i < tabs.length; i++) {
-                    tabs[i].onclick = function() {
-                        var color = this.getAttribute('data-color');
-                        var target = this.getAttribute('data-target');
-                        document.documentElement.style.setProperty('--theme-color', color);
-                        for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
-                        this.classList.add('active');
-                        this.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                        if (phraseSec) phraseSec.style.display = (target === 'all') ? 'block' : 'none';
-                        if (newsGrid) newsGrid.style.display = (target === 'survival' || target === 'about') ? 'none' : 'grid';
-                        if (survivalSec) survivalSec.style.display = (target === 'survival') ? 'block' : 'none';
-                        if (aboutSec) aboutSec.style.display = (target === 'about') ? 'block' : 'none';
-                        if (target !== 'survival' && target !== 'about') {
-                            for (var k = 0; k < articles.length; k++) {
-                                var cat = articles[k].getAttribute('data-category');
-                                if (target === 'all' || cat === target) articles[k].classList.remove('hidden');
-                                else articles[k].classList.add('hidden');
-                            }
-                        }
-                    };
-                }
-            } catch(e) {}
-        };
-        window.initAQI = function() {
-            try {
-                var el = document.getElementById('pjn-aqi-status');
-                fetch('https://api.waqi.info/feed/penang/?token=demo')
-                    .then(function(r) { return r.json(); })
-                    .then(function(j) {
-                        if (j.status === 'ok') {
-                            var a = j.data.aqi;
-                            var c = a > 100 ? 'aqi-unhealthy' : (a > 50 ? 'aqi-moderate' : 'aqi-good');
-                            var t = a > 100 ? '注意' : (a > 50 ? '普通' : '良好');
-                            el.innerHTML = '<span class="aqi-value ' + c + '">' + a + ' (' + t + ')</span>';
-                        }
-                    }).catch(function(){ el.innerText = "オフライン"; });
-            } catch(e) {}
-        };
-        window.initNewBadges = function() {
-            try {
-                var now = new Date();
-                var articles = document.querySelectorAll('.article-card');
-                for (var i = 0; i < articles.length; i++) {
-                    var d = articles[i].getAttribute('data-date');
-                    if (d && (now - new Date(d)) / 3600000 < 24) {
-                        var badge = articles[i].querySelector('.new-badge');
-                        if (badge) badge.style.display = 'inline-block';
-                    }
-                }
-            } catch(e) {}
-        };
-        window.initScroll = function() {
-            try {
-                var bar = document.getElementById('reading-progress-bar');
-                var btn = document.getElementById('back-to-top');
-                window.onscroll = function() {
-                    var top = document.documentElement.scrollTop || document.body.scrollTop;
-                    var h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                    if (bar && h > 0) bar.style.width = (top / h * 100) + "%";
-                    if (btn) btn.style.display = top > 300 ? "flex" : "none";
-                };
-            } catch(e) {}
-        };
-        window.changeFontSize = function(s, b) {
-            try {
-                document.body.className = 'font-' + s;
-                document.querySelectorAll('.font-sizer button').forEach(function(el) { el.classList.remove('active'); });
-                b.classList.add('active');
-                localStorage.setItem('pjn-fs', s);
-            } catch(e) {}
-        };
-        window.copyLink = function(s) {
-            navigator.clipboard.writeText(window.location.origin + "/posts/" + s).then(function() { alert("リンクをコピーしました！"); });
-        };
-        window.openArticle = function(s) {
-            try {
-                var card = document.querySelector('[data-slug="' + s + '"]');
-                if (card) {
-                    document.querySelectorAll('details').forEach(function(d) { d.open = false; });
-                    card.open = true;
-                    card.scrollIntoView({ behavior: 'smooth' });
-                }
-            } catch(e) {}
-        };
-        var fs = localStorage.getItem('pjn-fs') || 'medium';
-        document.body.className = 'font-' + fs;
-        var btn = document.getElementById('btn-' + fs);
-        if (btn) btn.classList.add('active');
-        window.loadDailyPhrase(); window.initTabs(); window.initNewBadges(); window.initScroll(); window.initAQI();
-    </script>
-</body>
-</html>
+            } catch(e)
