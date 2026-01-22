@@ -1,6 +1,6 @@
 ---
 title: "ジョージタウンの迷宮：第11回「時計台の真実と海への問い」"
-date: "2026-01-21"
+date: "2026-01-22"
 category: "PJN編集長 連載小説"
 ---
 <div class="genre-label">ジャンル：PJN編集長 連載小説</div>
